@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h4>AttendXMark Login</h4>
+    </div>
+    <div class="login-body">
+      
+      <form method="POST" novalidate>
+        {% csrf_token %}
+        <div class="form-group">
+          {{ form.username.label_tag }}
+          {{ form.username }}
+        </div>
+        <div class="form-group">
+          {{ form.password.label_tag }}
+          {{ form.password }}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-login">Login</button>
+        </div>
+      </form>
+    </div>
+    <div class="login-footer">
+      <small>Don’t have an account? <a href="{% url 'register' %}">Sign Up</a></small>
+    </div>
+  </div>
+</div>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    animation: backgroundFade 5s infinite alternate;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  @keyframes backgroundFade {
+    0% {
+      background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    }
+    100% {
+      background: linear-gradient(135deg, #d8f3e1, #eafaf1);
+    }
+  }
+
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh; /* Adjusted for navbar and footer */
+    width: 100%;
+  }
+
+  .login-card {
+    width: 400px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  .login-header {
+    background: linear-gradient(45deg, #2a9d8f, #1f7f67);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .login-body {
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .form-group input:focus {
+    border-color: #2a9d8f;
+    box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
+  }
+
+  .form-actions {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .btn-login {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: white;
+    background: #2a9d8f;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .btn-login:hover {
+    background: #1f7f67;
+    transform: scale(1.05);
+  }
+
+  .login-footer {
+    text-align: center;
+    background: #f8f9fa;
+    padding: 15px;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .login-footer a {
+    color: #2a9d8f;
+    text-decoration: none;
+  }
+
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+{% endblock %}

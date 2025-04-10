@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Main Content (Left Side) -->
+        <div class="col-md-8">
+            <!-- Dashboard Card -->
+            <div class="card shadow-lg mb-4 animate__animated animate__zoomIn" 
+                 style="border-radius: 15px; border: none; background: #ffffff;">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-dark mb-4" style="color: #34495e;">Quick Actions</h2>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% if request.user.is_teacher %}
+                        <a href="{% url 'capture_face' %}" 
+                           class="btn action-btn text-white fw-bold" 
+                           style="background: #27ae60; border-radius: 10px; padding: 12px 25px;">
+                            <i class="fas fa-camera me-2"></i>Capture Face
+                        </a>
+                        <a href="{% url 'lecture_list' %}" 
+                           class="btn action-btn text-white fw-bold" 
+                           style="background:  #2980b9; border-radius: 10px; padding: 12px 25px;">
+                            <i class="fas fa-list me-2"></i>View Lectures
+                        </a>
+                        {% elif request.user.is_student %}
+                        <button class="btn action-btn text-white fw-bold" 
+                                style="background: #2980b9; border-radius: 10px; padding: 12px 25px;">
+                            <i class="fas fa-list me-2"></i>View Attendance
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
+                         style="animation-delay: 0.2s; border-radius: 15px; background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                        <div class="card-body text-white p-4">
+                            <h5 class="card-title fw-bold">Today's Attendance</h5>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="85" data-suffix="%">0</p>
+                            <small>Updated: {{ current_date|default:"February 28, 2025" }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6"><a href="#techer-section" style="text-decoration:none;">
+                    <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
+                         style="animation-delay: 0.3s; border-radius: 15px; background: linear-gradient(135deg, #3498db, #2980b9);">
+                        <div class="card-body text-white p-4">
+                            <h5 class="card-title fw-bold">Active Teachers</h5>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="{{ staff_users.count }}">0</p>
+                            <small>Currently Online</small>
+                        </div>
+                    </div>
+                </a>
+                </div>
+                
+                 <div class="col-md-6"><a href="{% url 'leave_list' %}" style="text-decoration:none;">
+           
+                    <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
+                         style="animation-delay: 0.4s; border-radius: 15px; background: linear-gradient(135deg, #e67e22, #d35400);">
+                        <div class="card-body text-white p-4">
+                            <h5 class="card-title fw-bold">Pending Leaves</h5>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="{{ pending_leaves_count }}">0</p>
+                            <small>Awaiting Approval</small>
+                        </div>
+                    </div>
+                         
+              </a>
+           
+                </div>
+            
+                <div class="col-md-6">
+                    <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
+                         style="animation-delay: 0.5s; border-radius: 15px; background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        <div class="card-body text-white p-4">
+                            <h5 class="card-title fw-bold">Total Classes</h5>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="28">0</p>
+                            <small>This Month</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Profiles (Right Side) -->
+        <div class="col-md-4" id="techer-section">
+            <div class="card shadow-lg teacher-card animate__animated animate__fadeInRight" 
+                 style="border-radius: 15px; background: #ffffff; overflow: hidden;">
+                <div class="card-header" 
+                     style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 15px;">
+                    <h3 class="mb-0 fw-bold d-flex justify-content-between align-items-center">
+                        Teacher Profiles
+                        <span class="badge bg-light text-dark rounded-pill">{{ staff_users.count }}</span>
+                    </h3>
+                </div>
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto; overflow-x:hidden;">
+                    <ul class="list-group list-group-flush">
+                        {% for user in staff_users %}
+                            <li class="list-group-item teacher-item d-flex align-items-center" 
+                                onclick="copyUsername('{{ user.username }}')">
+                                <img src="{{ user.profile_picture.url|default:'https://via.placeholder.com/50.png?text=User' }}" 
+                                     alt="Profile Picture" 
+                                     class="rounded-circle me-3"
+                                     style="width: 50px; height: 50px; object-fit: cover; border: 2px solid #3498db;">
+                                <div>
+                                    <h6 class="mb-0 fw-bold" style="color: #2c3e50;">
+                                        {{ user.first_name|capfirst }} {{ user.last_name|capfirst }}
+                                    </h6>
+                                    <small class="text-muted">@{{ user.username }}</small>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted py-3">No staff profiles found.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    
+    .action-btn {
+        transition: all 0.4s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .action-btn:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        opacity: 0.9;
+    }
+    
+    .teacher-item {
+        transition: all 0.4s ease;
+        border: none !important;
+        padding: 15px !important;
+    }
+    .teacher-item:hover {
+        background: linear-gradient(to right, #f8f9fa, #ecf0f1);
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        cursor: pointer;
+    }
+    
+    .stat-card {
+        transition: all 0.4s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .stat-card:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    
+    .teacher-card {
+        height: 100%;
+    }
+    
+    /* Scrollbar Styling */
+    .card-body::-webkit-scrollbar {
+        width: 8px;
+    }
+    .card-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .card-body::-webkit-scrollbar-thumb {
+        background: #3498db;
+        border-radius: 4px;
+    }
+</style>
+
+<!-- Include Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<!-- JavaScript -->
+<script>
+    function copyUsername(username) {
+        navigator.clipboard.writeText(username)
+            .then(() => {
+                const toast = document.createElement('div');
+                toast.textContent = `Copied: ${username}`;
+                toast.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: white; padding: 10px 20px; border-radius: 5px; z-index: 1000;';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            })
+            .catch(err => console.error('Failed to copy: ', err));
+    }
+
+    // Animated Countdown
+    document.addEventListener('DOMContentLoaded', () => {
+        const counters = document.querySelectorAll('.count-up');
+        counters.forEach(counter => {
+            const target = +counter.getAttribute('data-target');
+            const suffix = counter.getAttribute('data-suffix') || '';
+            let count = 0;
+
+            const updateCount = () => {
+                const speed = 200; // Adjust speed of animation
+                const increment = target / speed;
+
+                if (count < target) {
+                    count = Math.min(count + increment, target);
+                    counter.innerText = Math.ceil(count) + suffix;
+                    setTimeout(updateCount, 10);
+                } else {
+                    counter.innerText = target + suffix;
+                }
+            };
+            updateCount();
+        });
+    });
+</script>
+{% endblock %}

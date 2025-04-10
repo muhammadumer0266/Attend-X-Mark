@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center capture-container">
+    <h2 class="mb-4 capture-title">Capture Student's Face</h2>
+    
+    <!-- Camera Preview -->
+    <div class="camera-container d-flex justify-content-center">
+        <div id="my_camera" class="camera-preview rounded shadow-sm"></div>
+    </div>
+    
+    <!-- Captured Images Container -->
+    <div id="capturedImages" class="captured-images mt-4 d-flex flex-wrap justify-content-center gap-2"></div>
+
+    <!-- Control Buttons -->
+    <div class="mt-4 control-buttons">
+        <button class="btn btn-primary me-2" id="snapshotBtn" onclick="take_snapshot()">Take Snapshot</button>
+        <button class="btn btn-outline-secondary me-2" onclick="switchCamera()">Switch Camera</button>
+        <button class="btn btn-success" id="submitBtn" onclick="submitImages()" disabled>Submit All</button>
+    </div>
+
+    <!-- Hidden Form -->
+    <form id="uploadForm" method="POST" enctype="multipart/form-data" class="d-none">
+        {% csrf_token %}
+        <input type="hidden" name="image_data[]" id="image_data" multiple>
+    </form>
+</div>
+
+<!-- Hidden Canvas -->
+<canvas id="flipCanvas" width="320" height="240" class="d-none"></canvas>
+
+<!-- Webcam.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.25/webcam.min.js"></script>
+<script>
+    let facingMode = 'user';
+    let isCaptured = false;
+    let capturedImages = []; // Array to store captured image data
+    const cameraDiv = document.getElementById('my_camera');
+    const capturedImagesDiv = document.getElementById('capturedImages');
+    const snapshotBtn = document.getElementById('snapshotBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const canvas = document.getElementById('flipCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function configureWebcam() {
+        Webcam.set({
+            width: 320,
+            height: 240,
+            image_format: 'jpeg',
+            jpeg_quality: 90,
+            constraints: { facingMode: facingMode }
+        });
+    }
+
+    configureWebcam();
+    Webcam.attach('#my_camera');
+
+    function take_snapshot() {
+        if (isCaptured) {
+            cameraDiv.innerHTML = '';
+            configureWebcam();
+            Webcam.attach('#my_camera');
+            isCaptured = false;
+            snapshotBtn.textContent = 'Take Snapshot';
+        } else {
+            Webcam.snap(function(data_uri) {
+                Webcam.reset();
+                const img = new Image();
+                img.onload = function() {
+                    ctx.translate(320, 0);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(img, 0, 0, 320, 240);
+                    const flippedDataUri = canvas.toDataURL('image/jpeg', 0.9);
+                    cameraDiv.innerHTML = `<img src="${flippedDataUri}" class="camera-preview rounded shadow-sm border" alt="Captured Image">`;
+                    snapshotBtn.textContent = 'Retake Snapshot';
+                    isCaptured = true;
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                    // Add captured image to the list and display it
+                    capturedImages.push(flippedDataUri);
+                    updateCapturedImages();
+                    submitBtn.disabled = false;
+                };
+                img.src = data_uri;
+            });
+        }
+    }
+
+    function updateCapturedImages() {
+        // Clear and rebuild the DOM efficiently
+        capturedImagesDiv.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        capturedImages.forEach((dataUri, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'captured-image-wrapper position-relative';
+            wrapper.innerHTML = `
+                <img src="${dataUri}" class="captured-image rounded" alt="Captured Thumbnail">
+                <span class="close-btn" onclick="removeImage(${index})"></span>
+            `;
+            fragment.appendChild(wrapper);
+        });
+        capturedImagesDiv.appendChild(fragment);
+    }
+
+    function removeImage(index) {
+        capturedImages.splice(index, 1);
+        updateCapturedImages();
+        if (capturedImages.length === 0) {
+            submitBtn.disabled = true;
+        }
+    }
+
+    function submitImages() {
+        const form = document.getElementById('uploadForm');
+        const input = document.getElementById('image_data');
+        input.value = JSON.stringify(capturedImages);
+        form.submit();
+    }
+
+    function switchCamera() {
+        if (!isCaptured) {
+            facingMode = (facingMode === 'user') ? 'environment' : 'user';
+            Webcam.reset();
+            configureWebcam();
+            Webcam.attach('#my_camera');
+        }
+    }
+</script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
+  
+    /* Custom Styles */
+    .capture-container {
+        font-family: 'Poppins', 'Montserrat', 'Open Sans', -apple-system, sans-serif !important;
+        max-width: 700px;
+        padding: 30px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin: 0 auto;
+    }
+
+    .capture-title {
+        font-family: 'Roboto', sans-serif;
+        font-weight: 500;
+        font-size: 1.75rem;
+        color: #2c3e50;
+        letter-spacing: 0.5px;
+    }
+
+    .camera-preview {
+        width: 320px;
+        height: 240px;
+        transform: scaleX(-1);
+        background: #1a1a1a;
+        object-fit: cover;
+        border: 1px solid #e0e0e0;
+    }
+
+    .captured-images {
+        min-height: 80px;
+    }
+
+    .captured-image-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .captured-image {
+        width: 80px;
+        height: 60px;
+        transform: scaleX(-1);
+        object-fit: cover;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .captured-image-wrapper:hover .captured-image {
+        transform: scaleX(-1) scale(1.05);
+        opacity: 0.9;
+    }
+
+    .close-btn {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 20px;
+        height: 20px;
+        background: #ffffff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgb(200, 35, 51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') no-repeat center center;
+        background-size: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 50%;
+        cursor: pointer;
+        transform: scale(1.1);
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .close-btn:hover {
+        background: #f8f9fa url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgb(200, 35, 51)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>') no-repeat center center;
+        background-size: 12px;
+    }
+
+    .control-buttons .btn {
+        padding: 8px 18px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+        background: #34495e;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #2c3e50;
+    }
+
+    .btn-outline-secondary {
+        border-color: #95a5a6;
+        color: #95a5a6;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #95a5a6;
+        color: #fff;
+        border-color: #95a5a6;
+    }
+
+    .btn-success {
+        background: #2ecc71;
+        border: none;
+    }
+
+    .btn-success:hover {
+        background: #27ae60;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 576px) {
+        .capture-container {
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .camera-preview {
+            width: 100%;
+            height: auto;
+            max-width: 320px;
+            aspect-ratio: 4 / 3;
+        }
+
+        .captured-image {
+            width: 60px;
+            height: 45px;
+        }
+
+        .control-buttons .btn {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .capture-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

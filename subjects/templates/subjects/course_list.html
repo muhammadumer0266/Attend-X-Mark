@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}My Semester Courses{% endblock %}
+ 
+{% block content %}
+<div class="courses-container">
+  <div class="courses-card">
+    <!-- Header Section -->
+    <div class="courses-header">
+      <h3>Courses for {{ semester.name }}</h3>
+    </div>
+
+    <!-- Courses Table -->
+    <div class="courses-body">
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered shadow-sm">
+          <thead>
+            <tr>
+              <th scope="col">Course Code</th>
+              <th scope="col">Course Title</th>
+              <th scope="col">Credit Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for course in courses %}
+            <tr>
+              <td>{{ course.code }}</td>
+              <td>{{ course.title }}</td>
+              <td>{{ course.credit_hours }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-danger fw-bold">No courses available for this semester.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSS for Animations and Theme -->
+<style>
+  /* General Body Theme */
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    animation: backgroundFade 5s infinite alternate;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  @keyframes backgroundFade {
+    0% {
+      background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    }
+    100% {
+      background: linear-gradient(135deg, #d8f3e1, #eafaf1);
+    }
+  }
+
+  /* Courses Card */
+  .courses-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    width: 100%;
+  }
+
+  .courses-card {
+    width: 900px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  .courses-header {
+    background: linear-gradient(45deg, #457b9d, #1d3557);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .courses-body {
+    padding: 20px;
+    background: #f8f9fa;
+  }
+
+  /* Table Theme */
+  table {
+    border-color: #a8dadc;
+  }
+
+  thead {
+    background-color: #457b9d;
+    color: #ffffff;
+  }
+
+  tbody tr:hover {
+    background-color: #f1faee;
+    transform: scale(1.02);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #a8dadc;
+  }
+
+  /* Animations */
+  @keyframes fadeInDown {
+    0% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}

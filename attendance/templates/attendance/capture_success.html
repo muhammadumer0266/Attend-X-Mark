@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h2 class="text-success">Success!</h2>
+    <p class="mt-3">The captured faces have been successfully processed and matched against student profile pictures.</p>
+    
+    <!-- Display all captured images -->
+    <div class="mt-3">
+        <h4>Captured Images</h4>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            {% for image in captured_images_info %}
+            <div>
+                <img src="{{ image.url }}" alt="Captured Face" class="img-thumbnail" style="max-width: 320px; max-height: 240px;">
+                <p>User: {{ image.user.first_name }} {{ image.user.last_name }} (Faces Detected: {{ image.faces_detected }})</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Display total number of faces detected -->
+    <div class="mt-3">
+        <h4>Total Faces Detected: <span class="badge bg-info">{{ total_faces_detected }}</span></h4>
+        {% if total_faces_detected == 0 %}
+            <p class="text-danger">Warning: No faces detected in any captured image.</p>
+        {% endif %}
+    </div>
+
+    <!-- List of matched students -->
+    {% if matched_students %}
+    <div class="mt-4">
+        <h4>Matched Students:</h4>
+        <ul class="list-group mt-3" style="max-width: 400px; margin-left: auto; margin-right: auto;">
+            {% for username in matched_students %}
+            <li class="list-group-item">
+                {{ username }}
+                <span class="badge bg-success float-end">Matched</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="mt-4">
+        <p>No matching students found in the database.</p>
+    </div>
+    {% endif %}
+
+    <!-- Back to dashboard or capture again -->
+    <div class="mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+        <a href="{% url 'capture_face' %}" class="btn btn-secondary">Capture Again</a>
+    </div>
+</div>
+{% endblock %}

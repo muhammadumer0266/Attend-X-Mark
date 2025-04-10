@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Mark Attendance - {{ lecture.course.code }}{% endblock %}
+
+{% block content %}
+<div class="attendance-container">
+  <header class="attendance-header">
+    <h3>Attendance for {{ lecture.course.code }} - {{ lecture.lecture_class.name }}</h3>
+  </header>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="table-wrapper">
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th scope="col" class="sticky-col">Student</th>
+            {% for date in lecture_dates %}
+              <th scope="col">{{ date|date:"M d, Y" }} ({{ date|date:"D" }})</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+            <tr class="tb-row">
+              <td class="sticky-col">{{ student.roll_no }}</td>
+              {% for date in lecture_dates %}
+                <td>
+                  {% with student_id=student.id date_str=date|date:"Y-m-d" %}
+                    {% if student_id in attendance_dict and date in attendance_dict.student_id %}
+                      <span class="status-{{ attendance_dict.student_id.date|lower }}">{{ attendance_dict.student_id.date }}</span>
+                    {% else %}
+                      <div class="attendance-buttons">
+                        <button type="submit" name="attendance_{{ student_id }}_{{ date_str }}" value="Present" class="btn-present">P</button>
+                        <button type="submit" name="attendance_{{ student_id }}_{{ date_str }}" value="Late" class="btn-late">L</button>
+                        <button type="submit" name="attendance_{{ student_id }}_{{ date_str }}" value="Absent" class="btn-absent">A</button>
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="{{ lecture_dates|length|add:1 }}" class="no-students">No students enrolled in this class.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+</div>
+
+<style>
+  .tb-row:hover{
+    background:rgb(222, 226, 184);
+  }
+  .attendance-container {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .attendance-header {
+    background: linear-gradient(45deg, #457b9d, #1d3557);
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    background: #fff; /* White background for the scrollable area */
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+
+  .attendance-table th, .attendance-table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    min-width: 100px; /* Ensure columns have enough width */
+  }
+
+  .attendance-table th {
+    background: #457b9d;
+    color: #fff;
+  }
+
+  /* Sticky column for roll numbers */
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 1;
+    border-right: 2px solid #e9ecef;
+  }
+
+  .attendance-table th.sticky-col {
+    background: #457b9d;
+    color: #fff;
+  }
+
+  .attendance-buttons {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+  }
+
+  /* Modern button styles */
+  .btn-present, .btn-late, .btn-absent {
+    background: #fff; /* White background by default */
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-present {
+    color: #28a745; /* Green text */
+    border: 1px solid #28a745; /* Green border */
+  }
+
+  .btn-late {
+    color: #007bff; /* Blue text */
+    border: 1px solid #007bff; /* Blue border */
+  }
+
+  .btn-absent {
+    color: #dc3545; /* Red text */
+    border: 1px solid #dc3545; /* Red border */
+  }
+
+  /* Hover effects */
+  .btn-present:hover {
+    background: #28a745;
+    color: #fff;
+    border-color: #28a745;
+  }
+
+  .btn-late:hover {
+    background: #007bff;
+    color: #fff;
+    border-color: #007bff;
+  }
+
+  .btn-absent:hover {
+    background: #dc3545;
+    color: #fff;
+    border-color: #dc3545;
+  }
+
+  /* Styles for marked attendance */
+  .status-present, .status-late, .status-absent {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .status-present {
+    background: #28a745; /* Green background for Present */
+  }
+
+  .status-late {
+    background: #007bff; /* Blue background for Late */
+  }
+
+  .status-absent {
+    background: #dc3545; /* Red background for Absent */
+  }
+
+  .no-students {
+    text-align: center;
+    color: #dc3545;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}

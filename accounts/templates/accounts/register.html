@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="register-container">
+  <div class="register-card">
+    <div class="register-header">
+      <h4>Create Account</h4>
+    </div>
+    <div class="register-body">
+      <form method="POST" novalidate>
+
+        
+        {% csrf_token %}
+        <div class="form-grid">
+          {% for field in form %}
+          <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-register">Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    animation: backgroundFade 5s infinite alternate;
+    {% comment %} display: flex; {% endcomment %}
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  @keyframes backgroundFade {
+    0% {
+      background: linear-gradient(135deg, #eafaf1, #d8f3e1);
+    }
+    100% {
+      background: linear-gradient(135deg, #d8f3e1, #eafaf1);
+    }
+  }
+
+  .register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .register-card {
+    width: 600px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+
+  .register-header {
+    background: linear-gradient(45deg, #2a9d8f, #1f7f67);
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+
+  .register-body {
+    padding: 20px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    font-weight: bold;
+    color: #333;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .form-group input:focus {
+    border-color: #2a9d8f;
+    box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
+  }
+
+  .form-actions {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .btn-register {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: white;
+    background: #2a9d8f;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .btn-register:hover {
+    background: #1f7f67;
+    transform: scale(1.05);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .register-card {
+      width: 100%;
+      max-width: 400px;
+    }
+  }
+</style>
+
+{% endblock %}

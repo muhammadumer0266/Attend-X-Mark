@@ -21,50 +21,131 @@
   
   <!-- Custom CSS -->
   <style>
-    /* Body Styling *//* Import Google Fonts */
+    /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap');
     
     body {
       font-family: 'Poppins', 'Montserrat', 'Open Sans', -apple-system, sans-serif !important;
       background: #f8f9fa;
-      min-height:100%;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    /* Loader Styles */
+    .loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw; /* Use viewport width for full coverage */
+      height: 100vh; /* Use viewport height for full coverage */
+      min-height: 100%; /* Ensure it covers the full height on mobile */
+      background: #0C4B33; /* Match navbar background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .loader.hidden {
+      opacity: 0;
+      pointer-events: none; /* Prevent interaction when hidden */
+    }
+
+    .loader-logo {
+      font-size: 2.5rem; /* Default size for desktop */
+      font-weight: 700;
+      color: #C9F0DD; /* Match navbar hover color */
+      animation: beat 1.2s infinite ease-in-out;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* Add depth */
+      text-align: center;
+    }
+
+    @keyframes beat {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1); /* Scale up for the "beat" effect */
+      }
+    }
+
+    /* Responsive adjustments for the loader */
+    @media (max-width: 768px) {
+      .loader-logo {
+        font-size: 2rem; /* Smaller size for tablets */
+      }
+
+      @keyframes beat {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15); /* Slightly larger beat effect for visibility */
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .loader-logo {
+        font-size: 1.5rem; /* Even smaller size for mobile */
+        padding: 0 20px; /* Add padding to prevent text wrapping on very small screens */
+        line-height: 1.2; /* Improve readability */
+      }
+
+      @keyframes beat {
+        0%, 100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2); /* Larger beat effect for smaller screens */
+        }
+      }
+    }
+
+    /* Ensure loader covers full screen on landscape orientation */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .loader-logo {
+        font-size: 1.8rem; /* Adjust for landscape on small screens */
+      }
     }
 
     /* Navbar Styles */
     .navbar {
       padding: 1rem;
-      background: #0C4B33; /* Background color */
+      background: #0C4B33;
     }
 
     .navbar-brand {
       font-weight: bold;
       font-size: 1.7rem;
-      color: #FFFFFF; /* Link color */
+      color: #FFFFFF;
       transition: all 0.3s ease;
     }
 
     .navbar-brand:hover {
-      color: #C9F0DD; /* Hover color */
+      color: #C9F0DD;
     }
 
     .navbar-nav .nav-link {
       font-size: 1rem;
-      color: #FFFFFF; /* Link color */
+      color: #FFFFFF;
       margin: 0 10px;
       transition: all 0.3s ease;
       position: relative;
     }
 
     .navbar-nav .nav-link:hover {
-      color: #C9F0DD; /* Hover color */
+      color: #C9F0DD;
     }
 
-    /* Underline Animation for Links */
     .navbar-nav .nav-link::after {
       content: "";
       width: 0%;
       height: 2px;
-      background: #C9F0DD; /* Hover underline color */
+      background: #C9F0DD;
       position: absolute;
       bottom: 0;
       left: 0;
@@ -79,90 +160,96 @@
     footer {
       margin-top: 20px;
       padding: 15px 0;
-      bottom: 0px;
-      background: #44B78B; /* Footer background color */
-      color: #FFFFFF; /* Footer text color */
+      bottom: 0;
+      background: #44B78B;
+      color: #FFFFFF;
       text-align: center;
     }
 
     footer a {
-      color: #FFFFFF; /* Footer link color */
+      color: #FFFFFF;
       text-decoration: none;
     }
 
     footer a:hover {
-      color: #C9F0DD; /* Footer link hover color */
+      color: #C9F0DD;
+    }
+
+    /* Admin Marquee Styles */
+    .modern-marquee {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      background-color: #F7F7F7;
+      padding: 8px 0;
+      border-bottom: 1px solid #E0E0E0;
+    }
+
+    .modern-marquee-link {
+      display: inline-block;
+      color: #417690;
+      text-decoration: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 0 15px;
+      animation: scroll 12s linear infinite;
+      transition: color 0.3s ease;
+    }
+
+    .modern-marquee-link:hover {
+      color: #79AEC8;
+    }
+
+    .close-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #417690;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+
+    .close-btn:hover {
+      color: #79AEC8;
+    }
+
+    @keyframes scroll {
+      0% {
+        transform: translateX(100%);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
     }
   </style>
 </head>
 
 <body>
+  <!-- Loader -->
+  <div class="loader" id="loader">
+    <div class="loader-logo">AttendXMark</div>
+  </div>
+
   <!-- Navbar -->
   {% if request.user.is_superuser %}
   <div class="modern-marquee" id="admin-marquee">
-      <a href="{% url 'admin:index' %}" class="modern-marquee-link">
-          Go to Admin Panel
-      </a>
-      <button class="close-btn" onclick="document.getElementById('admin-marquee').style.display='none'">✕</button>
+    <a href="{% url 'admin:index' %}" class="modern-marquee-link">
+      Go to Admin Panel
+    </a>
+    <button class="close-btn" onclick="document.getElementById('admin-marquee').style.display='none'">✕</button>
   </div>
-  <style>
-      .modern-marquee {
-          position: relative;
-          width: 100%;
-          overflow: hidden;
-          background-color: #F7F7F7; /* Light gray background */
-          padding: 8px 0;
-          border-bottom: 1px solid #E0E0E0; /* Subtle border */
-      }
+  {% endif %}
 
-      .modern-marquee-link {
-          display: inline-block;
-          color: #417690; /* Django's muted blue-green for text */
-          text-decoration: none;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* System fonts */
-          font-size: 14px;
-          font-weight: 500;
-          padding: 0 15px;
-          animation: scroll 12s linear infinite;
-          transition: color 0.3s ease; /* Smooth hover transition */
-      }
-
-      .modern-marquee-link:hover {
-          color: #79AEC8; /* Lighter Django blue-green on hover */
-      }
-
-      .close-btn {
-          position: absolute;
-          right: 10px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #417690; /* Match text color */
-          font-size: 16px;
-          cursor: pointer;
-          padding: 0;
-          width: 20px;
-          height: 20px;
-          line-height: 20px;
-          text-align: center;
-          transition: color 0.3s ease;
-      }
-
-      .close-btn:hover {
-          color: #79AEC8; /* Match hover color */
-      }
-
-      @keyframes scroll {
-          0% {
-              transform: translateX(100%);
-          }
-          100% {
-              transform: translateX(-100%);
-          }
-      }
-  </style>
-{% endif %}
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
       <!-- Brand Logo -->
@@ -178,10 +265,6 @@
       <!-- Navbar Links -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <!-- Home Link -->
-          
-
-          <!-- Leave Management Links -->
           {% if user.is_authenticated %}
           <!-- Home Link -->
           <li class="nav-item">
@@ -221,7 +304,7 @@
           <!-- Profile and Logout -->
           <li class="nav-item">
             <a class="nav-link" href="{% url 'profile' %}">
-            Profile
+              Profile
             </a>
           </li>
           <li class="nav-item">
@@ -243,12 +326,12 @@
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'login' %}">
-            Login
+              Login
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'register' %}">
-            Register
+              Register
             </a>
           </li>
           {% endif %}
@@ -265,10 +348,18 @@
 
   <!-- Footer -->
   <footer>
-    <p>&copy; 2025 AttendXMark | All Rights Reserved</p>
+    <p>© 2025 AttendXMark | All Rights Reserved</p>
   </footer>
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Loader JavaScript -->
+  <script>
+    window.onload = function() {
+      const loader = document.getElementById('loader');
+      loader.classList.add('hidden');
+    };
+  </script>
 </body>
 </html>

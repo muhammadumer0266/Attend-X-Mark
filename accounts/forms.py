@@ -71,12 +71,13 @@ class StudentAdditionalInfoForm(forms.ModelForm):
 
     class Meta:
         model = Student
-        fields = ['roll_no', 'degree_level', 'discipline', 'semester', 'contact_number']
+        fields = ['roll_no', 'degree_level', 'discipline', 'semester', 'contact_number','section']
         widgets = {
             'roll_no': forms.TextInput(
                 attrs={'class': 'form-control', 'placeholder': 'Enter roll number'}
             ),
             'degree_level': forms.Select(attrs={'class': 'form-control'}),
+            'section': forms.Select(attrs={'class': 'form-control'}),
             'discipline': forms.Select(attrs={'class': 'form-control'}),
             'semester': forms.Select(attrs={'class': 'form-control'}),
         }

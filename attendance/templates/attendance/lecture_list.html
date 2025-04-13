@@ -3,56 +3,250 @@
 {% block title %}My Lectures{% endblock %}
 
 {% block content %}
-<div class="lecture-schedule">
-  <div class="lecture-card">
-    <header class="lecture-header">
-      <h3>Lectures for {{ request.user.first_name|capfirst }} {{ request.user.last_name|capfirst }}</h3>
-    </header>
-    <section class="lecture-content">
-      <div class="table-wrapper">
-        <table class="lecture-table">
-          <thead>
-            <tr>
-              <th scope="col">Course</th>
-              <th scope="col">Semester</th>
-              <th scope="col">Start Time</th>
-              <th scope="col">End Time</th>
-              <th scope="col">Days</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for lecture in lectures %}
-            <tr style="--row-index: {{ forloop.counter0 }}">
-              <td>{{ lecture.course }}</td>
-              <td>{{ lecture.lecture_class }}</td>
-              <td>{{ lecture.start_time }}</td>
-              <td>{{ lecture.end_time }}</td>
-              <td>{{ lecture.days_display }}</td>
-              <td>
-                <a href="{% url 'mark_attendance' class_id=lecture.lecture_class.id %}" class="btn">Mark Attendance</a>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="no-lectures">No lectures available this semester.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
+<div class="lecture-container">
+  <header class="lecture-header">
+    <h3>Lectures for {{ request.user.first_name|capfirst }} {{ request.user.last_name|capfirst }}</h3>
+  </header>
+
+  <div class="table-wrapper">
+    <table class="lecture-table">
+      <thead>
+        <tr>
+          <th scope="col">Course</th>
+          <th scope="col">Class</th>
+          <th scope="col">Start Time</th>
+          <th scope="col">End Time</th>
+          <th scope="col">Days</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lecture in lectures %}
+          <tr class="row-tb" style="--row-index: {{ forloop.counter0 }}">
+            <td data-label="Course">{{ lecture.course }}</td>
+            <td data-label="Class">{{ lecture.lecture_class }}</td>
+            <td data-label="Start Time">{{ lecture.start_time }}</td>
+            <td data-label="End Time">{{ lecture.end_time }}</td>
+            <td data-label="Days">{{ lecture.days_display }}</td>
+            <td data-label="Action">
+              <a href="{% url 'mark_attendance' class_id=lecture.lecture_class.id %}" class="btn">Mark Attendance</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="no-lectures">No lectures available this semester.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
 <style>
+  /* Base container styling */
+  .lecture-container {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Header styling */
+  .lecture-header {
+    background: linear-gradient(45deg, #457b9d, #1d3557);
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  /* Table wrapper for horizontal scrolling on small screens */
+  .table-wrapper {
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Table styling */
+  .lecture-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+  }
+
+  .lecture-table th,
+  .lecture-table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    min-width: 100px;
+  }
+
+  .lecture-table th {
+    background: #457b9d;
+    color: #fff;
+  }
+
+  /* Button styling */
   .btn {
+    display: inline-block;
     background: #457b9d;
     color: #fff;
     padding: 5px 10px;
     text-decoration: none;
     border-radius: 5px;
+    font-weight: 600;
+    transition: background 0.3s ease;
   }
-  .btn:hover { background: #1d3557; }
+
+  .btn:hover {
+    background: #1d3557;
+    color:wheat;
+  }
+
+  /* No lectures message */
+  .no-lectures {
+    text-align: center;
+    color: #dc3545;
+    font-weight: 600;
+    padding: 20px;
+  }
+
+  /* Tablet adjustments */
+  @media (max-width: 768px) {
+    .lecture-container {
+      padding: 10px;
+    }
+
+    .lecture-header {
+      padding: 15px;
+    }
+
+    .lecture-table th,
+    .lecture-table td {
+      padding: 8px;
+      font-size: 14px;
+      min-width: 80px;
+    }
+
+    .btn {
+      padding: 4px 8px;
+      font-size: 14px;
+    }
+  }
+
+  /* Mobile view (modern card layout) */
+  @media (max-width: 480px) {
+    .lecture-container {
+      padding: 10px;
+    }
+
+    .lecture-header {
+      padding: 15px;
+      font-size: 1.2rem;
+    }
+
+    .table-wrapper {
+      overflow-x: hidden; /* Disable horizontal scroll for card layout */
+      padding: 10px 0;
+      box-shadow: none; /* Remove shadow since cards have their own */
+    }
+
+    .lecture-table {
+      display: block;
+      background: transparent; /* Remove table background for cards */
+    }
+
+    .lecture-table thead {
+      display: none; /* Hide header on mobile */
+    }
+
+    .lecture-table tbody,
+    .lecture-table tr {
+      display: block;
+    }
+
+    /* Card styling for each lecture */
+    .lecture-table tr {
+      margin: 15px 10px;
+      border: none;
+      border:rgba(0, 0, 0, 0.15) solid 1px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+      box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1),
+                  -5px -5px 15px rgba(255, 255, 255, 0.7);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* Hover/tap effect for cards */
+    .lecture-table tr:hover,
+    .lecture-table tr:active {
+      transform: translateY(-3px);
+      box-shadow: 7px 7px 20px rgba(0, 0, 0, 0.15),
+                  -7px -7px 20px rgba(255, 255, 255, 0.9);
+      background: linear-gradient(145deg, #f0f0f0, #d9d9d9);
+    }
+
+    .lecture-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      text-align: left;
+      min-width: 0;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* Label styling for each field */
+    .lecture-table td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #1d3557;
+      margin-right: 10px;
+      flex: 0 0 40%; /* Fixed width for labels */
+    }
+
+    /* Value styling */
+    .lecture-table td:not([data-label="Action"]) {
+      flex-wrap: wrap;
+    }
+
+    .lecture-table td:last-child {
+      border-bottom: none;
+    }
+
+    /* Action button styling */
+    .lecture-table td[data-label="Action"] {
+      justify-content: center;
+      padding: 15px;
+    }
+
+    .btn {
+      background: linear-gradient(45deg, #457b9d, #1d3557);
+      padding: 8px 15px;
+      font-size: 13px;
+      border-radius: 25px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+
+    .btn:hover,
+    .btn:active {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      background: linear-gradient(45deg, #1d3557, #457b9d);
+    }
+
+    .no-lectures {
+      font-size: 14px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+  }
 </style>
 {% endblock %}

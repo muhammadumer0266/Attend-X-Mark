@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Access Denied{% endblock %}
+
+{% block content %}
+<div class="access-denied-container">
+  <div class="access-denied-card">
+    <div class="icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+      </svg>
+    </div>
+    <h3>Access Denied</h3>
+    <p>You do not have permission to view this page. Please contact an administrator if you believe this is an error.</p>
+    <a href="{% url 'attendance' %}" class="btn btn-primary">Back to Attendance</a>
+  </div>
+</div>
+
+<style>
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .access-denied-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+  }
+
+  .access-denied-card {
+    background: #ffffff;
+    max-width: 500px;
+    width: 100%;
+    padding: 40px;
+    text-align: center;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+
+  .access-denied-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .icon-wrapper {
+    margin-bottom: 20px;
+  }
+
+  .icon-wrapper svg {
+    color: #dc3545;
+  }
+
+  .access-denied-card h3 {
+    color: #1d3557;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .access-denied-card p {
+    color: #6c757d;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 25px;
+  }
+
+  .btn-primary {
+    display: inline-block;
+    padding: 12px 30px;
+    background: linear-gradient(45deg, #457b9d, #1d3557);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(45deg, #1d3557, #457b9d);
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 576px) {
+    .access-denied-card {
+      padding: 20px;
+    }
+
+    .access-denied-card h3 {
+      font-size: 24px;
+    }
+
+    .access-denied-card p {
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+  }
+</style>
+{% endblock %}

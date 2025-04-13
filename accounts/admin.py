@@ -73,7 +73,7 @@ class TeacherAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'roll_no', 'semester', 'discipline', 'degree_level')
+    list_display = ('first_name', 'last_name', 'email', 'roll_no', 'degree_level', 'discipline', 'semester')
     search_fields = ('first_name', 'last_name', 'email', 'roll_no')
     list_filter = ('semester', 'discipline', 'degree_level','is_active')
     ordering = ('roll_no',)
@@ -83,7 +83,7 @@ class StudentAdmin(admin.ModelAdmin):
             'fields': ('first_name', 'last_name', 'email','password', 'profile_picture')
         }),
         ('Academic Information', {
-            'fields': ('roll_no', 'semester', 'discipline', 'degree_level','shift',)
+            'fields': ('roll_no', 'degree_level', 'discipline', 'semester','section','shift',)
         }),
         ('Permissions', {
             'fields': ('is_active','status')

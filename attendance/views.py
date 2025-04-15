@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Leave, Lecture, Attendance, Day
-from .forms import LeaveForm
+from .models import Leave, Lecture, Day, Attendance, CapturedFace
+from .forms import LeaveForm, AttendanceFormSet
 from django.contrib import messages
 from accounts.models import Student, CustomUser
 from django.core.files.base import ContentFile
@@ -9,10 +9,10 @@ import face_recognition
 import base64
 import os
 import json
-from .models import CapturedFace
-from django.http import JsonResponse
-from datetime import date, timedelta, datetime
 from django.conf import settings
+from django.utils import timezone
+from subjects.models import Class
+from django.core.exceptions import ValidationError
 
 @login_required
 def leave_request(request):
@@ -22,7 +22,10 @@ def leave_request(request):
             leave = form.save(commit=False)
             leave.user = request.user
             leave.save()
+            messages.success(request, "Leave request submitted successfully.")
             return redirect('leave_list')
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = LeaveForm()
     return render(request, 'attendance/leave_request.html', {'form': form})
@@ -42,6 +45,7 @@ def leave_approve(request, leave_id):
     leave = get_object_or_404(Leave, id=leave_id)
     leave.status = 'Approved'
     leave.save()
+    messages.success(request, f"Leave request for {leave.user} approved.")
     return redirect('leave_list')
 
 @login_required
@@ -49,6 +53,7 @@ def leave_decline(request, leave_id):
     leave = get_object_or_404(Leave, id=leave_id)
     leave.status = 'Declined'
     leave.save()
+    messages.success(request, f"Leave request for {leave.user} declined.")
     return redirect('leave_list')
 
 @login_required
@@ -130,151 +135,116 @@ def capture_success(request, captured_face_ids):
         return render(request, 'attendance/capture_face.html', {'error': f'An error occurred: {str(e)}'})
 
 @login_required
-def attendance(request):
-    if not hasattr(request.user, 'student'):
-        messages.error(request, "Only students can view their attendance records.")
-        return render(request, 'attendance/access_denied.html', status=403)
-
-    student = request.user.student
-    enrolled_classes = student.classes.all()
-    lectures = Lecture.objects.filter(lecture_class__in=enrolled_classes).distinct()
-
-    if not lectures:
-        messages.info(request, "You are not enrolled in any lectures.")
-        return render(request, 'attendance/student_attendance.html', {'lectures': []})
-
-    lecture_data = []
-    for lecture in lectures:
-        lecture_days = lecture.days.all()
-        if not lecture_days:
-            continue
-
-        today = date.today()
-        date_range = [today - timedelta(days=x) for x in range(30)]
-        lecture_dates = [
-            d for d in date_range
-            if any(day.name == d.strftime('%A') for day in lecture_days)
-        ]
-
-        attendance_records = Attendance.objects.filter(
-            student=student,
-            date__in=lecture_dates,
-            lectures=lecture
-        ).select_related('student')
-
-        attendance_dict = {}
-        for record in attendance_records:
-            date_str = record.date.strftime("%Y-%m-%d")
-            attendance_dict[date_str] = {
-                'status': record.status,
-                'is_makeup': record.is_makeup
-            }
-
-        lecture_data.append({
-            'lecture': lecture,
-            'lecture_dates': sorted(lecture_dates, reverse=True),
-            'attendance_dict': attendance_dict,
-        })
-
-    context = {
-        'lectures': lecture_data,
-        'student': student,
-    }
-    return render(request, 'attendance/student_attendance.html', context)
-
-@login_required
 def lecture_list(request, lecture_id=None):
     user = request.user
     if not user.is_staff:
         return render(request, 'attendance/access_denied.html', status=403)
 
-    lectures = Lecture.objects.filter(teacher=user).order_by("start_time")
+    lectures = Lecture.objects.filter(teacher=user, lecture_class__isnull=False).order_by("start_time")
 
     if lecture_id:
         lecture = get_object_or_404(Lecture, lecture_id=lecture_id, teacher=user)
         class_id = lecture.lecture_class.id if lecture.lecture_class else None
         if class_id:
-            return redirect('mark_attendance', class_id=class_id)
+            return redirect('mark_attendance', lecture_id=lecture.lecture_id, class_id=class_id)
         else:
             messages.error(request, "This lecture has no associated class.")
             return redirect('lecture_list')
 
     return render(request, 'attendance/lecture_list.html', {'lectures': lectures, 'user': user})
-
 @login_required
-def mark_attendance(request, class_id):
+def mark_attendance(request, lecture_id, class_id):
     if not request.user.is_staff:
         return render(request, 'attendance/access_denied.html', status=403)
 
-    lecture = get_object_or_404(Lecture, teacher=request.user, lecture_class__id=class_id)
-    class_obj = lecture.lecture_class
-    students = class_obj.students.all().order_by('roll_no')
+    lecture = get_object_or_404(Lecture, lecture_id=lecture_id, teacher=request.user)
+    lecture_class = get_object_or_404(Class, id=class_id)
+    
+    if lecture.lecture_class != lecture_class:
+        messages.error(request, "This lecture does not belong to the specified class.")
+        return redirect('lecture_list')
 
-    lecture_days = lecture.days.all()
-    today = date.today()
-    date_range = [today - timedelta(days=x) for x in range(30)]
-    lecture_dates = [
-        d for d in date_range
-        if any(day.name == d.strftime('%A') for day in lecture_days)
-    ]
+    students = lecture_class.students.all()
+    print("Students:", list(students))  # Debug
+    
+    if not students.exists():
+        messages.warning(request, "No students are enrolled in this class.")
+        return redirect('lecture_list')
 
-    attendance_records = Attendance.objects.filter(
-        student__in=students,
-        date__in=lecture_dates,
-        lectures=lecture
-    ).select_related('student')
+    today = timezone.now().date()
+    current_day = today.strftime('%A')
+    is_lecture_day = lecture.days.filter(name=current_day).exists()
+    is_makeup = request.GET.get('is_makeup', 'False') == 'True'
 
-    attendance_dict = {}
-    for record in attendance_records:
-        student_id = str(record.student_id)
-        date_str = record.date.strftime("%Y-%m-%d")
-        if student_id not in attendance_dict:
-            attendance_dict[student_id] = {}
-        attendance_dict[student_id][date_str] = {
-            'status': record.status,
-            'is_makeup': record.is_makeup
-        }
+    existing_attendance = Attendance.objects.filter(
+        lecture=lecture,
+        date=today,
+        is_makeup=is_makeup
+    ).exists()
+
+    if existing_attendance:
+        messages.warning(request, f"Attendance for this lecture on {today} {'(Makeup)' if is_makeup else ''} has already been marked.")
+        return redirect('lecture_list')
+
+    # Create initial data for the formset
+    initial_data = [{'student': student.id, 'status': 'Absent'} for student in students]
 
     if request.method == 'POST':
-        success = False
-        for student in students:
-            for lecture_date_str in request.POST:
-                if lecture_date_str.startswith('attendance_'):
-                    parts = lecture_date_str.split('_')
-                    if len(parts) == 4 and parts[1] == str(student.id):
-                        date_str = parts[2]
-                        is_makeup = parts[3] == 'makeup'
-                        status = request.POST[lecture_date_str]
-                        if status in ['Present', 'Absent', 'Late']:
-                            try:
-                                lecture_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-                                attendance, created = Attendance.objects.update_or_create(
-                                    student=student,
-                                    date=lecture_date,
-                                    is_makeup=is_makeup,
-                                    defaults={'status': status}
-                                )
-                                attendance.lectures.set([lecture])
-                                success = True
-                            except ValueError:
-                                continue
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            if success:
-                return JsonResponse({'success': True, 'message': 'Attendance updated successfully!'})
-            else:
-                return JsonResponse({'success': False, 'message': 'No valid attendance data provided.'}, status=400)
-
-        if success:
-            messages.success(request, "Attendance updated successfully!")
+        formset = AttendanceFormSet(
+            request.POST,
+            queryset=Attendance.objects.none(),
+            initial=initial_data,
+            extra=len(students)  # Ensure the formset creates a form for each student
+        )
+        print("POST Formset Forms:", len(formset.forms))  # Debug
+        
+        if formset.is_valid():
+            for form in formset:
+                attendance = Attendance(
+                    lecture=lecture,
+                    student=students[int(form.cleaned_data['student'])],  # Map back to student
+                    date=today,
+                    is_makeup=is_makeup,
+                    status=form.cleaned_data['status']
+                )
+                try:
+                    attendance.clean()
+                    attendance.save()
+                except ValidationError as e:
+                    messages.error(request, f"Error for student: {str(e)}")
+                    formset_students = list(zip(formset.forms, students))
+                    return render(request, 'attendance/mark_attendance.html', {
+                        'formset': formset,
+                        'lecture': lecture,
+                        'lecture_class': lecture_class,
+                        'formset_students': formset_students,
+                        'is_makeup': is_makeup,
+                        'is_lecture_day': is_lecture_day,
+                        'today': today,
+                    })
+            messages.success(request, "Attendance marked successfully.")
+            return redirect('lecture_list')
         else:
-            messages.error(request, "No attendance data was updated.")
-        return redirect('mark_attendance', class_id=class_id)
+            messages.error(request, "Please correct the errors below.")
+            print("Formset Errors:", formset.errors)  # Debug
+    else:
+        formset = AttendanceFormSet(
+            queryset=Attendance.objects.none(),
+            initial=initial_data,
+            extra=len(students)  # Ensure the formset creates a form for each student
+        )
+        print("GET Formset Forms:", len(formset.forms))  # Debug
+
+    formset_students = list(zip(formset.forms, students))
+    print("Formset Students:", formset_students)  # Debug
 
     context = {
+        'formset': formset,
         'lecture': lecture,
-        'students': students,
-        'lecture_dates': lecture_dates,
-        'attendance_dict': attendance_dict,
+        'lecture_class': lecture_class,
+        'formset_students': formset_students,
+        'is_makeup': is_makeup,
+        'is_lecture_day': is_lecture_day,
+        'today': today,
     }
-    return render(request, 'attendance/attendance_mark.html', context)
+    return render(request, 'attendance/mark_attendance.html', context)

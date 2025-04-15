@@ -29,7 +29,7 @@
             <td data-label="End Time">{{ lecture.end_time }}</td>
             <td data-label="Days">{{ lecture.days_display }}</td>
             <td data-label="Action">
-              <a href="{% url 'mark_attendance' class_id=lecture.lecture_class.id %}" class="btn">Mark Attendance</a>
+<a href="{% url 'mark_attendance' lecture_id=lecture.lecture_id class_id=lecture.lecture_class.id %}" class="btn btn-primary btn-sm">Mark Attendance</a>
             </td>
           </tr>
         {% empty %}

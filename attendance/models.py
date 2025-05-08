@@ -18,13 +18,7 @@ class Leave(models.Model):
     def __str__(self):
         return f"{self.user.first_name} - {self.subject} ({self.status})"
 
-class CapturedFace(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='captured_faces/')
-    captured_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.first_name} - {self.captured_at}"
 
 class Day(models.Model):
     name = models.CharField(
@@ -76,48 +70,34 @@ class Lecture(models.Model):
 
     def days_display(self):
         return ', '.join(day.name for day in self.days.all())
-
-class Attendance(models.Model):
-    lecture = models.ForeignKey(Lecture, on_delete=models.SET_NULL, null=True, related_name='attendances')
-    student = models.ForeignKey(Student, on_delete=models.SET_NULL, null=True, related_name='attendances')
+    
+class AttendanceRecord(models.Model):
+    lecture = models.ForeignKey('Lecture', on_delete=models.CASCADE, related_name='attendance_records')
     date = models.DateField(default=timezone.now)
-    is_makeup = models.BooleanField(default=False)
-    status = models.CharField(
-        max_length=7,
-        choices=[
-            ('Present', 'Present'),
-            ('Absent', 'Absent'),
-            ('Leave', 'Leave'),
-        ],
-        default='Absent'
-    )
-    timestamp = models.DateTimeField(auto_now_add=True)
-
+    is_makeup_class = models.BooleanField(default=False)
     class Meta:
-        verbose_name = "Attendance"
-        verbose_name_plural = "Attendances"
-        constraints = [
-            models.UniqueConstraint(
-                fields=['lecture', 'student', 'date', 'is_makeup'],
-                name='unique_attendance_per_lecture_student_date_makeup'
-            )
-        ]
-
-    def clean(self):
-        # Validate that the student belongs to the lecture's class
-        if self.student and self.lecture and self.lecture.lecture_class:
-            if self.student not in self.lecture.lecture_class.students:
-                raise ValidationError(f"Student {self.student} does not belong to class {self.lecture.lecture_class}")
-        
-        # Validate that Leave status is consistent with approved leave
-        if self.status == 'Leave' and self.date:
-            leave_exists = Leave.objects.filter(
-                user=self.student,
-                leave_date=self.date,
-                status='Approved'
-            ).exists()
-            if not leave_exists:
-                raise ValidationError("Cannot mark as Leave without an approved leave request for this date.")
+        verbose_name = "Attendance Record"
+        verbose_name_plural = "Attendance Records"
 
     def __str__(self):
-        return f"{self.student} - {self.lecture} - {self.date} ({'Makeup' if self.is_makeup else 'Regular'})"
+        return f"{self.lecture} - {self.date}"
+
+
+class Attendance(models.Model):
+    ATTENDANCE_STATUS_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave'),
+    ]
+
+    attendance_record = models.ForeignKey('AttendanceRecord', on_delete=models.CASCADE, related_name='attendances')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    attendance_status = models.CharField(max_length=10, choices=ATTENDANCE_STATUS_CHOICES)
+
+    class Meta:
+        unique_together = ('attendance_record', 'student')
+        verbose_name = "Attendance"
+        verbose_name_plural = "Attendances"
+
+    def __str__(self):
+        return f"{self.student} - {self.attendance_record.date} - {self.attendance_status}"

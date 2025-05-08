@@ -5,14 +5,30 @@ from .models import CustomUser, Teacher, Student
 from subjects.models import Department, DegreeLevel, Discipline, Semester
 
 
-# User Details Form for Profile Settings
+from django import forms
+from accounts.models import CustomUser
+
 class UserDetailsForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter new password'}),
+        required=False,
+        label='New Password'
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm new password'}),
+        required=False,
+        label='Confirm Password'
+    )
+
     class Meta:
         model = CustomUser
-        fields = ['profile_picture', 'email']
+        fields = ['profile_picture', 'first_name', 'last_name', 'email', 'contact_number', 'password']
         widgets = {
             'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your first name'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your last name'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your contact number'}),
         }
 
     # Validation for email uniqueness
@@ -22,17 +38,46 @@ class UserDetailsForm(forms.ModelForm):
             raise forms.ValidationError('This email is already registered.')
         return email
 
+    # Validation for password matching
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error('confirm_password', 'Passwords do not match.')
+        elif password and not confirm_password:
+            self.add_error('confirm_password', 'Please confirm your password.')
+        elif confirm_password and not password:
+            self.add_error('password', 'Please enter a password.')
+        return cleaned_data
+
+    # Override save to hash the password
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password = self.cleaned_data.get('password')
+        if password:
+            user.set_password(password)  # Hash the password
+        if commit:
+            user.save()
+        return user
+from django_recaptcha.fields import ReCaptchaField
+
 # Form for creating new users
 class CustomUserCreationForm(UserCreationForm):
+    captcha = ReCaptchaField()
     class Meta:
         model = CustomUser
-        fields = ('first_name', 'last_name', 'email', 'password1', 'password2')
+        fields = ('first_name', 'last_name', 'email', 'password1', 'password2', 'captcha')
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
         }
 
+from django.contrib.auth.forms import AuthenticationForm
+class CustomAuthenticationForm(AuthenticationForm):
+    captcha = ReCaptchaField()
 
 # Form for Teacher additional information
 class TeacherAdditionalInfoForm(forms.ModelForm):

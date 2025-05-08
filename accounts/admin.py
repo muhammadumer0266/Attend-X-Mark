@@ -49,8 +49,42 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 
+from django import forms
+from django.contrib.auth.hashers import make_password
+import string
+import random
+
+# Custom form for TeacherAdmin to handle password input and hashing
+class TeacherAdminForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = Teacher
+        fields = '__all__'
+
+    def save(self, commit=True):
+        # Automatically hash the password if provided
+        if self.cleaned_data.get('password'):
+            self.instance.password = make_password(self.cleaned_data['password'])
+        return super().save(commit)
+
+# Custom form for StudentAdmin to handle password input and hashing
+class StudentAdminForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = Student
+        fields = '__all__'
+
+    def save(self, commit=True):
+        # Automatically hash the password if provided
+        if self.cleaned_data.get('password'):
+            self.instance.password = make_password(self.cleaned_data['password'])
+        return super().save(commit)
+
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
+    form = TeacherAdminForm
     list_display = ('first_name', 'last_name', 'email', 'department', 'designation', 'specialization', 'joining_date', 'is_staff')
     search_fields = ('first_name', 'last_name', 'email', 'department__name', 'specialization')
     list_filter = ('designation', 'department', 'is_staff', 'joining_date')
@@ -66,27 +100,51 @@ class TeacherAdmin(admin.ModelAdmin):
             'fields': ('is_superuser', 'groups')
         }),
     )
-    # Add filter_horizontal for the 'courses' field
     filter_horizontal = ('courses',)
-    
 
+    # Add reset password action
+    actions = ['reset_password']
+
+    def reset_password(self, request, queryset):
+        # Generate a random 12-character password
+        characters = string.ascii_letters + string.digits + string.punctuation
+        for user in queryset:
+            new_password = ''.join(random.choice(characters) for _ in range(12))
+            user.password = make_password(new_password)
+            user.save()
+            # Display the new password in admin message (consider secure delivery in production)
+            self.message_user(request, f"Password for {user.email} reset to: {new_password}")
+    reset_password.short_description = "Reset password for selected teachers"
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
+    form = StudentAdminForm
     list_display = ('first_name', 'last_name', 'email', 'roll_no', 'degree_level', 'discipline', 'semester')
     search_fields = ('first_name', 'last_name', 'email', 'roll_no')
-    list_filter = ('semester', 'discipline', 'degree_level','is_active')
+    list_filter = ('semester', 'discipline', 'degree_level', 'is_active')
     ordering = ('roll_no',)
-
     fieldsets = (
         ('Personal Information', {
-            'fields': ('first_name', 'last_name', 'email','password', 'profile_picture')
+            'fields': ('first_name', 'last_name', 'email', 'password', 'profile_picture')
         }),
         ('Academic Information', {
-            'fields': ('roll_no', 'degree_level', 'discipline', 'semester','section','shift',)
+            'fields': ('roll_no', 'degree_level', 'discipline', 'semester', 'section', 'shift')
         }),
         ('Permissions', {
-            'fields': ('is_active','status')
+            'fields': ('is_active', 'status')
         }),
     )
 
+    # Add reset password action
+    actions = ['reset_password']
+
+    def reset_password(self, request, queryset):
+        # Generate a random 12-character password
+        characters = string.ascii_letters + string.digits + string.punctuation
+        for user in queryset:
+            new_password = ''.join(random.choice(characters) for _ in range(12))
+            user.password = make_password(new_password)
+            user.save()
+            # Display the new password in admin message (consider secure delivery in production)
+            self.message_user(request, f"Password for {user.email} reset to: {new_password}")
+    reset_password.short_description = "Reset password for selected students"

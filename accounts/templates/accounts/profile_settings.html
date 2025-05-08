@@ -1,37 +1,63 @@
-  {% extends 'base.html' %}
-  {% load static %}
+{% extends 'base.html' %}
+{% load static %}
 
-  {% block content %}
-  <div class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-8 col-md-10 col-sm-12">
-        <!-- Profile Settings Card -->
-        <div class="card shadow-lg border-0 rounded-4 animate__animated animate__fadeIn" style="background: #ffffff;">
-          <div class="card-header text-white text-center rounded-top-4 py-4" 
-              style="background: linear-gradient(135deg, #2c3e50, #34495e);">
-            <h3 class="mb-0 fw-bold">Profile Settings</h3>
-          </div>
-          <div class="card-body p-4 p-md-5">
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-md-10 col-sm-12">
+      <!-- Profile Settings Card -->
+      <div class="card shadow-lg border-0 rounded-4 animate__animated animate__fadeIn" style="background: #ffffff;">
+        <div class="card-header text-white text-center rounded-top-4 py-4" 
+            style="background: linear-gradient(45deg, #457b9d, #1d3557);">
+          <h3 class="mb-0 fw-bold">Profile Settings</h3>
+        </div>
+        <div class="card-body p-4 p-md-5">
+          <!-- Display Messages -->
+          {% if messages %}
+            <div class="mb-4">
+              {% for message in messages %}
+                <div class="alert {{ message.tags|default:'alert-info' }} alert-dismissible fade show" 
+                    role="alert" style="border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
 
-            <!-- Display Messages -->
-            {% if messages %}
-              <div class="mb-4">
-                {% for message in messages %}
-                  <div class="alert {{ message.tags|default:'alert-info' }} alert-dismissible fade show" 
-                      role="alert" style="border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                  </div>
-                {% endfor %}
+          <!-- Profile Settings Form -->
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row">
+              <!-- Form Fields (Left Column on Desktop) -->
+              <div class="col-lg-8 col-12 order-lg-1 order-2">
+                <div class="row g-4">
+                  {% for field in form %}
+                    {% if field.name != 'profile_picture' %}
+                      <div class="col-lg-6 col-12">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-dark" 
+                              style="color: #2c3e50;">{{ field.label }}</label>
+                        <div class="input-group" style="cursor: pointer; background: #fff; border: solid #d1d9e6 2px; border-radius: 15px;">
+                          {% if field.name == 'password' or field.name == 'confirm_password' %}
+                            {{ field }}
+                            <span class="input-group-text toggle-password" style="cursor: pointer; background: #fff; border: none;">
+                              <i class="fas fa-eye"></i>
+                            </span>
+                          {% else %}
+                            {{ field }}
+                          {% endif %}
+                        </div>
+                        {% if field.errors %}
+                          <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
               </div>
-            {% endif %}
 
-            <!-- Profile Settings Form -->
-            <form method="POST" enctype="multipart/form-data">
-              {% csrf_token %}
-              
-              <!-- Profile Picture Section -->
-              <div class="text-center mb-5">
+              <!-- Profile Picture (Right Column on Desktop) -->
+              <div class="col-lg-4 col-12 order-lg-2 order-1 d-flex flex-column justify-content-center align-items-center mb-4 mb-lg-0">
                 <img id="profilePreview" 
                     src="{{ user.profile_picture.url|default:'https://via.placeholder.com/150.png?text=User' }}" 
                     alt="Profile Picture" 
@@ -47,183 +73,213 @@
                   </label>
                 </div>
               </div>
-              
-              <!-- Render Form Fields -->
-              <div class="row g-4 justify-content-center">
-                {% for field in form %}
-                  {% if field.name != 'profile_picture' %}
-                    <div class="col-md-6 col-12">
-                      <label for="{{ field.id_for_label }}" class="form-label fw-semibold text-dark" 
-                            style="color: #2c3e50;">{{ field.label }}</label>
-                      <div class="input-group">
-                        {{ field }}
-                      </div>
-                      {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors|striptags }}</div>
-                      {% endif %}
-                    </div>
-                  {% endif %}
-                {% endfor %}
-              </div>
+            </div>
 
-              <!-- Buttons -->
-              <div class="d-flex justify-content-end mt-5 gap-3">
-                <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold" 
-                        style="border-radius: 25px; background: linear-gradient(135deg, #3498db, #2980b9); transition: all 0.3s ease;">
-                  Save Changes
-                </button>
-                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-5 py-2 fw-semibold" 
-                  style="border-radius: 25px; border-color: #34495e; color: #34495e; transition: all 0.3s ease;">
-                  Cancel
-                </a>
-              </div>
-            </form>
-
-          </div>
+            <!-- Buttons -->
+            <div class="d-flex justify-content-center mt-5 gap-3">
+              <button type="submit" class="btn btn-primary px-5 py-2 fw-semibold" 
+                      style="border-radius: 25px; background: linear-gradient(135deg, #3498db, #2980b9); transition: all 0.3s ease;">
+                Save Changes
+              </button>
+              <button type="button" class="btn btn-outline-secondary px-5 py-2 fw-semibold cancel-btn" 
+                      style="border-radius: 25px; border-color: #34495e; color: #34495e; transition: all 0.3s ease;">
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Modal for Profile Picture -->
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 rounded-4 shadow-lg">
-        <div class="modal-header text-white rounded-top-4" 
-            style="background: linear-gradient(135deg, #2c3e50, #34495e);">
-          <h5 class="modal-title fw-bold" id="profileModalLabel">Profile Picture</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body p-4 text-center" style="background: #f8f9fa;">
-          <img id="modalProfileImage" 
-              src="{{ user.profile_picture.url|default:'https://via.placeholder.com/150.png?text=User' }}" 
-              alt="Profile Picture" 
-              class="rounded-circle shadow-sm" 
-              style="width: 300px; height: 300px; object-fit: cover;">
-        </div>
+<!-- Modal for Profile Picture -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow-lg">
+      <div class="modal-header text-white rounded-top-4" 
+          style="background: linear-gradient(135deg, #2c3e50, #34495e);">
+        <h5 class="modal-title fw-bold" id="profileModalLabel">Profile Picture</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4 text-center" style="background: #f8f9fa;">
+        <img id="modalProfileImage" 
+            src="{{ user.profile_picture.url|default:'https://via.placeholder.com/150.png?text=User' }}" 
+            alt="Profile Picture" 
+            class="rounded-circle shadow-sm" 
+            style="width: 300px; height: 300px; object-fit: cover;">
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Custom Styles -->
-  <style>
-    body {
-      background: #ecf0f1;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+<!-- Custom Styles -->
+<style>
+  body {
+    background: #ecf0f1;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .card {
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+  }
+
+  .card:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  }
+
+  .profile-img-clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+
+  .form-label {
+    color: #2c3e50;
+    font-size: 1.1rem;
+  }
+
+  .input-group input, .input-group select, .input-group textarea {
+    width: 100%;
+    border-radius: 12px;
+    border: none;
+    padding: 12px 15px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background: #fff;
+  }
+
+  /* Remove border for password fields */
+  .input-group input[name="password"], .input-group input[name="confirm_password"] {
+    border: none;
+    border-radius: 12px 0 0 12px;
+    padding-right: 0;
+  }
+
+  .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+    outline: none;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+  }
+
+  .btn-outline-secondary:hover {
+    background: #34495e;
+    color: #fff;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(52, 73, 94, 0.3);
+  }
+
+  .upload-btn:hover {
+    background: #3498db;
+    color: #fff;
+    border-color: #3498db;
+  }
+
+  .toggle-password {
+    background: #fff;
+    border: none;
+    border-radius: 0 12px 12px 0;
+    padding: 12px;
+    color: #2c3e50;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 991px) {
+    .card-body {
+      padding: 2.5rem !important;
     }
-
-    .card {
-      transition: all 0.3s ease;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    .profile-img-clickable {
+      width: 130px !important;
+      height: 130px !important;
     }
-
-    .card:hover {
-      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    /* Stack profile picture above fields on smaller screens */
+    .order-lg-1 {
+      order: 2 !important;
     }
-
-    .profile-img-clickable:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    .order-lg-2 {
+      order: 1 !important;
     }
+  }
 
-    .form-label {
-      color: #2c3e50;
-      font-size: 1.1rem;
+  @media (max-width: 576px) {
+    .card-body {
+      padding: 2rem !important;
     }
-
-    .input-group input, .input-group select, .input-group textarea {
+    .profile-img-clickable {
+      width: 110px !important;
+      height: 110px !important;
+    }
+    .btn {
       width: 100%;
-      border-radius: 12px;
-      border: 1px solid #d1d9e6;
-      padding: 12px 15px;
-      font-size: 1rem;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      background: #fff;
+      margin-bottom: 10px;
     }
-
-    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
-      border-color: #3498db;
-      box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
-      outline: none;
+    .d-flex.justify-content-center {
+      flex-direction: column;
     }
+  }
+</style>
 
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #2980b9, #3498db);
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-    }
+<!-- Include Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
-    .btn-outline-secondary:hover {
-      background: #34495e;
-      color: #fff;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(52, 73, 94, 0.3);
-    }
+<!-- Include Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    .upload-btn:hover {
-      background: #3498db;
-      color: #fff;
-      border-color: #3498db;
-    }
+<!-- JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const profileInput = document.getElementById("id_profile_picture");
+    const profilePreview = document.getElementById("profilePreview");
+    const modalProfileImage = document.getElementById("modalProfileImage");
+    const cancelButton = document.querySelector('.cancel-btn');
 
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-      .card-body {
-        padding: 2.5rem !important;
+    // Profile Picture Preview on Upload
+    profileInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const newSrc = e.target.result;
+          profilePreview.src = newSrc;
+          modalProfileImage.src = newSrc;
+        };
+        reader.readAsDataURL(file);
       }
-      .profile-img-clickable {
-        width: 130px !important;
-        height: 130px !important;
-      }
-    }
+    });
 
-    @media (max-width: 576px) {
-      .card-body {
-        padding: 2rem !important;
-      }
-      .profile-img-clickable {
-        width: 110px !important;
-        height: 110px !important;
-      }
-      .btn {
-        width: 100%;
-        margin-bottom: 10px;
-      }
-      .d-flex.justify-content-end {
-        flex-direction: column;
-      }
-    }
-  </style>
+    // Sync modal image with preview on modal open
+    const profileModal = document.getElementById('profileModal');
+    profileModal.addEventListener('show.bs.modal', () => {
+      modalProfileImage.src = profilePreview.src;
+    });
 
-  <!-- Include Animate.css -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-
-  <!-- JavaScript -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const profileInput = document.getElementById("id_profile_picture");
-      const profilePreview = document.getElementById("profilePreview");
-      const modalProfileImage = document.getElementById("modalProfileImage");
-
-      // Profile Picture Preview on Upload
-      profileInput.addEventListener("change", function () {
-        const file = this.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const newSrc = e.target.result;
-            profilePreview.src = newSrc;
-            modalProfileImage.src = newSrc;
-          };
-          reader.readAsDataURL(file);
+    // Toggle Password Visibility
+    document.querySelectorAll('.toggle-password').forEach(toggle => {
+      toggle.addEventListener('click', () => {
+        const input = toggle.previousElementSibling;
+        const icon = toggle.querySelector('i');
+        if (input.type === 'password') {
+          input.type = 'text';
+          icon.classList.remove('fa-eye');
+          icon.classList.add('fa-eye-slash');
+        } else {
+          input.type = 'password';
+          icon.classList.remove('fa-eye-slash');
+          icon.classList.add('fa-eye');
         }
       });
-
-      // Sync modal image with preview on modal open
-      const profileModal = document.getElementById('profileModal');
-      profileModal.addEventListener('show.bs.modal', () => {
-        modalProfileImage.src = profilePreview.src;
-      });
     });
-  </script>
-  {% endblock %}
+
+    // Cancel Button: Go back to previous page
+    cancelButton.addEventListener('click', () => {
+      window.history.back();
+    });
+  });
+</script>
+{% endblock %}

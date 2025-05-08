@@ -12,7 +12,7 @@
                     <h2 class="card-title text-dark mb-4" style="color: #34495e;">Quick Actions</h2>
                     <div class="d-flex flex-wrap gap-3">
                         {% if request.user.is_teacher %}
-                        <a href="{% url 'capture_face' %}" 
+                        <a href="#" 
                            class="btn action-btn text-white fw-bold" 
                            style="background: #27ae60; border-radius: 10px; padding: 12px 25px;">
                             <i class="fas fa-camera me-2"></i>Capture Face
@@ -34,6 +34,7 @@
 
             <!-- Statistics Cards -->
             <div class="row g-4">
+                {% if request.user.is_student %}
                 <div class="col-md-6">
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
                          style="animation-delay: 0.2s; border-radius: 15px; background: linear-gradient(135deg, #2ecc71, #27ae60);">
@@ -44,6 +45,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
                 <div class="col-md-6"><a href="#techer-section" style="text-decoration:none;">
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
                          style="animation-delay: 0.3s; border-radius: 15px; background: linear-gradient(135deg, #3498db, #2980b9);">
@@ -56,6 +58,7 @@
                 </a>
                 </div>
                 
+                {% if request.user.is_teacher %}
                  <div class="col-md-6"><a href="{% url 'leave_list' %}" style="text-decoration:none;">
            
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
@@ -81,11 +84,12 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
 
         <!-- Teacher Profiles (Right Side) -->
-        <div class="col-md-4" id="techer-section">
+        <div class="col-md-4" id="techer-section" >
             <div class="card shadow-lg teacher-card animate__animated animate__fadeInRight" 
                  style="border-radius: 15px; background: #ffffff; overflow: hidden;">
                 <div class="card-header" 
@@ -133,7 +137,6 @@
         box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         opacity: 0.9;
     }
-    
     .teacher-item {
         transition: all 0.4s ease;
         border: none !important;
@@ -170,6 +173,8 @@
         background: #3498db;
         border-radius: 4px;
     }
+    @media only screen and (max-width:480px){
+        .row{gap:20px;}}
 </style>
 
 <!-- Include Animate.css -->

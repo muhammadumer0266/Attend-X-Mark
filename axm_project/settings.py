@@ -12,6 +12,27 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',  # Must be first
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+
+# Axes settings
+#############################################################################################################################
+
+
+AXES_ENABLED = True
+AXES_LOGIN_FAILURE_LIMIT = 10
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_COOLOFF_TIME = 0.05
+AXES_LOCKOUT_TEMPLATE = 'accounts/lockout.html'
+AXES_RESET_ON_SUCCESS = True
+AXES_VERBOSE = True
+AXES_LOCKOUT_PARAMETERS = ["username", ["ip_address", "user_agent"]]
+AXES_IP_WHITELIST = ['127.0.0.1']
+######################################################################################################################
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,10 +46,19 @@ SECRET_KEY = 'django-insecure-8-*qhr3$d$n==(h@i-0%iflzx=&od_mgojo-+6dk-3iu#=b+px
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['umerg.pythonanywhere.com',"127.0.0.1",'localhost']
 
+# Email configuration for Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'attendxmark@gmail.com'  # Replace with your Gmail address
+EMAIL_HOST_PASSWORD = 'plzs cuxd ccwl oeyk'  # Replace with your Gmail App Password
+DEFAULT_FROM_EMAIL = 'attendxmark@gmail.com'  # Replace with your Gmail address
 
 # Application definition
+
 
 INSTALLED_APPS = [
     "admin_interface",
@@ -41,12 +71,20 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'phonenumber_field',
     'accounts',       # Authentication
+    'django_recaptcha',
     'attendance',     # Attendance Management
     'reports',        # Reports
     'dashboard',      # Dashboard
     'subjects',       # Subjects
     'pwa',
+    'axes',
 ]
+
+
+
+RECAPTCHA_PUBLIC_KEY = '6LePDycrAAAAAMSQgSt6VPkJKkt6BsZ2qW6BXxyI'
+RECAPTCHA_PRIVATE_KEY = '6LePDycrAAAAAG5lOVFKBzxVxabJRF68LBZwEok4' 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -56,6 +94,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'accounts.middleware.CompleteProfileMiddleware',  # Add this line
+    'axes.middleware.AxesMiddleware', #axes middleware
 ]
 
 

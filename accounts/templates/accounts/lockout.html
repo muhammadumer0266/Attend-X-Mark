@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Account Locked{% endblock %}
+{% block content %}
+<div class="lockout-container">
+    <div class="lockout-card">
+        <div class="lockout-header">
+            <h4>Account Temporarily Locked</h4>
+        </div>
+        <div class="lockout-body">
+            <p>Too many failed login attempts. Your account is locked for 1 hour.</p>
+            <p>Please try again later or contact support.</p>
+            <a href="{% url 'home' %}" class="btn-home">Return to Home</a>
+        </div>
+    </div>
+</div>
+<style>
+    .lockout-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 70vh;
+        width: 100%;
+    }
+    .lockout-card {
+        width: 400px;
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+    }
+    .lockout-header {
+        background: linear-gradient(45deg, #457b9d, #1d3557);
+        color: white;
+        text-align: center;
+        padding: 20px;
+        font-size: 1.5rem;
+    }
+    .lockout-body {
+        padding: 20px;
+        text-align: center;
+    }
+    .btn-home {
+        display: inline-block;
+        padding: 10px 20px;
+        font-size: 1rem;
+        color: white;
+        background: linear-gradient(45deg, #457b9d, #1d3557);
+        border: none;
+        border-radius: 25px;
+        text-decoration: none;
+        transition: background 0.3s, transform 0.2s;
+    }
+    .btn-home:hover {
+        background: #1f7f67;
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

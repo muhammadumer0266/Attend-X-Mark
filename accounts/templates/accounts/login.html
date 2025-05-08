@@ -9,16 +9,48 @@
       <h4>AttendXMark Login</h4>
     </div>
     <div class="login-body">
-      
+      <!-- Messages -->
+      {% if messages %}
+        <div class="alert alert-danger">
+          <ul>
+            {% for message in messages %}
+              {% if message.tags == 'login_error' %}
+                <li>{{ message }}</li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <!-- reCAPTCHA Script -->
+      <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
       <form method="POST" novalidate>
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
         <div class="form-group">
           {{ form.username.label_tag }}
           {{ form.username }}
+          {% if form.username.errors %}
+            <div class="error">{{ form.username.errors }}</div>
+          {% endif %}
         </div>
         <div class="form-group">
           {{ form.password.label_tag }}
           {{ form.password }}
+          {% if form.password.errors %}
+            <div class="error">{{ form.password.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          {{ form.captcha }}
+          {% if form.captcha.errors %}
+            <div class="error">{{ form.captcha.errors }}</div>
+          {% endif %}
         </div>
         <div class="form-actions">
           <button type="submit" class="btn-login">Login</button>
@@ -56,12 +88,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 70vh; /* Adjusted for navbar and footer */
+    min-height: 70vh;
     width: 100%;
   }
 
   .login-card {
     width: 400px;
+    margin:20px;
     background: #ffffff;
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
@@ -69,7 +102,7 @@
   }
 
   .login-header {
-    background: linear-gradient(45deg, #2a9d8f, #1f7f67);
+    background: linear-gradient(45deg, #457b9d, #1d3557);
     color: white;
     text-align: center;
     padding: 20px;
@@ -80,9 +113,9 @@
   .login-body {
     padding: 20px;
   }
-
+  
   .form-group {
-    margin-bottom: 15px;
+    margin: 15px;
   }
 
   .form-group label {
@@ -107,6 +140,12 @@
     box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
   }
 
+  .form-group .g-recaptcha {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
   .form-actions {
     text-align: center;
     margin-top: 20px;
@@ -117,7 +156,7 @@
     padding: 10px 20px;
     font-size: 1rem;
     color: white;
-    background: #2a9d8f;
+    background: linear-gradient(45deg, #457b9d, #1d3557);
     border: none;
     border-radius: 25px;
     cursor: pointer;
@@ -138,12 +177,27 @@
   }
 
   .login-footer a {
-    color: #2a9d8f;
+    color: #457b9d;
     text-decoration: none;
   }
 
   .login-footer a:hover {
     text-decoration: underline;
+  }
+
+  .alert.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #f5c6cb;
+  }
+
+  .error {
+    color: #721c24;
+    font-size: 0.9rem;
+    margin-top: 5px;
   }
 </style>
 

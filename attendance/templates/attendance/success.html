@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- Bootstrap 5 CSS (ensure this is included in base.html or add it here) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+    .success-container {
+        min-height: 80vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    body{
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+    }
+    .success-card {
+        max-width: 500px;
+        width: 100%;
+        padding: 2rem;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        background: #ffffff;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    .success-card:hover {
+        transform: translateY(-5px);
+    }
+    .success-icon {
+        font-size: 3rem;
+        color: #28a745;
+        margin-bottom: 1rem;
+    }
+    .btn-modern {
+        background-color: #007bff;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 50px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .btn-modern:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+</style>
+
+<div class="success-container">
+    <div class="success-card">
+        <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i> <!-- Bootstrap Icons -->
+        </div>
+        <h2 class="mb-3">Attendance Marked Successfully!</h2>
+        <p class="text-muted mb-4">The attendance for the lecture has been recorded.</p>
+        <a href="{% url 'lecture_list' %}" class="btn btn-modern text-white">Back to Lectures</a>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS and Bootstrap Icons (ensure these are included in base.html or add here) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+{% endblock %}

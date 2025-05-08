@@ -1,10 +1,9 @@
 from django.contrib import admin
-from .models import Leave, CapturedFace, Day, Lecture, Attendance
+from .models import Leave, Day, Lecture
 from django import forms
 
 # Register Leave and CapturedFace
 admin.site.register(Leave)
-admin.site.register(CapturedFace)
 
 # Register the Day model
 @admin.register(Day)
@@ -33,9 +32,41 @@ class LectureAdmin(admin.ModelAdmin):
         return ', '.join(day.name for day in obj.days.all())
     days_display.short_description = 'Days'
 
+
+from django.contrib import admin
+from .models import AttendanceRecord, Attendance
+
+
+class AttendanceInline(admin.TabularInline):
+    model = Attendance
+    extra = 0
+    autocomplete_fields = ['student']
+    fields = ['student', 'attendance_status']
+    readonly_fields = []
+    can_delete = True
+
+
+@admin.register(AttendanceRecord)
+class AttendanceRecordAdmin(admin.ModelAdmin):
+    list_display = ['lecture', 'date','is_makeup_class']
+    list_filter = ['date', 'lecture__course', 'lecture__lecture_class','is_makeup_class']
+    search_fields = ['lecture__course__code', 'lecture__lecture_class__name']
+    date_hierarchy = 'date'
+    ordering = ['-date']
+    inlines = [AttendanceInline]
+
+    # Optional - control form layout
+    fieldsets = (
+        (None, {
+            'fields': ('lecture', 'date','is_makeup_class')
+        }),
+    )
+
+
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ('student', 'lecture', 'date', 'status', 'is_makeup', 'timestamp')
-    list_filter = ('status', 'is_makeup', 'date', 'lecture__course')
-    search_fields = ('student__first_name', 'student__last_name', 'lecture__course__code')
-    readonly_fields = ('timestamp',)
+    list_display = ['student', 'attendance_record', 'attendance_status']
+    list_filter = ['attendance_status', 'attendance_record__date']
+    search_fields = ['student__user__first_name', 'student__user__last_name']
+    autocomplete_fields = ['student', 'attendance_record']
+    ordering = ['-attendance_record__date']

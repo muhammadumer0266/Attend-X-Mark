@@ -9,28 +9,37 @@
         <div class="card-body leave-body">
             <form method="POST" class="needs-validation" novalidate>
                 {% csrf_token %}
-                <div class="mb-4">
-                    <label for="id_subject" class="form-label">Subject</label>
-                    {{ form.subject }}
-                </div>
-                <div class="mb-4">
-                    <label for="id_body" class="form-label">Description</label>
-                    <div class="textarea-container">
-                        {{ form.body }}
+                <div class="row">
+                    <!-- Left Column: Subject, Teacher, Leave Date -->
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label for="id_subject" class="form-label">Subject</label>
+                            {{ form.subject }}
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_teacher" class="form-label">Teacher</label>
+                            {{ form.teacher }}
+                        </div>
+                        <div class="mb-4">
+                            <label for="id_leave_date" class="form-label">Leave Date</label>
+                            <div class="input-group custom-datepicker">
+                                {{ form.leave_date }}
+                                <span class="input-group-icon"><i class="fas fa-calendar-alt"></i></span>
+                            </div>
+                            <small class="form-text text-muted">Select a date starting from 2 days ahead.</small>
+                        </div>
+                    </div>
+                    <!-- Right Column: Description -->
+                    <div class="col-lg-6">
+                        <div class="mb-4 description-container">
+                            <label for="id_body" class="form-label">Description</label>
+                            <div class="textarea-container">
+                                {{ form.body }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <label for="id_teacher" class="form-label">Teacher</label>
-                    {{ form.teacher }}
-                </div>
-                <div class="mb-4">
-                    <label for="id_leave_date" class="form-label">Leave Date</label>
-                    <div class="input-group custom-datepicker">
-                        {{ form.leave_date }}
-                        <span class="input-group-icon"><i class="fas fa-calendar-alt"></i></span>
-                    </div>
-                    <small class="form-text text-muted">Select a date starting from 2 days ahead.</small>
-                </div>
+                <!-- Submit Button -->
                 <button type="submit" class="btn submit-btn w-100">
                     <i class="fas fa-paper-plane"></i> Submit Request
                 </button>
@@ -53,7 +62,7 @@
         background: #ffffff;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         width: 100%;
-        max-width: 550px;
+        max-width: 800px; /* Increased to accommodate two columns */
         margin: auto;
         overflow: hidden;
         transition: transform 0.3s ease;
@@ -105,7 +114,7 @@
         padding: 15px;
         width: 100%;
         font-size: 1rem;
-        min-height: 120px;
+        min-height: 300px; /* Increased to fill column height */
         resize: none;
         background: #fff;
         transition: all 0.3s ease;
@@ -114,6 +123,11 @@
         border-color: #5d8bc2;
         box-shadow: 0 0 12px rgba(93, 139, 194, 0.3);
         outline: none;
+    }
+    .description-container {
+        height: 100%; /* Ensure the container fills the column */
+        display: flex;
+        flex-direction: column;
     }
     .custom-datepicker {
         position: relative;
@@ -198,15 +212,26 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(93, 139, 194, 0.4);
     }
-    @media (max-width: 768px) {
+    /* Responsive Adjustments */
+    @media (max-width: 991px) {
         .leave-card {
             width: 90%;
+            max-width: 500px;
         }
         .leave-header {
             font-size: 1.4rem;
         }
         .submit-btn {
             font-size: 0.9rem;
+        }
+        .row {
+            flex-direction: column;
+        }
+        .col-lg-6 {
+            width: 100%;
+        }
+        textarea {
+            min-height: 150px; /* Reduced for mobile */
         }
     }
 </style>

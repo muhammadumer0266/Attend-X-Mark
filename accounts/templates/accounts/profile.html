@@ -14,14 +14,13 @@
     <div class="profile-body">
       <div class="row">
         <!-- Profile Image -->
-        <div class="col-md-3 text-center">
+        <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
           {% if user.profile_picture %}
             <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle profile-pic">
           {% else %}
             <img src="/media/profile_pics/defpic.png" alt="Default Profile Picture" class="rounded-circle profile-pic">
           {% endif %}
           <h5 class="mt-3 fw-bold">{{ user.first_name|capfirst }} {{ user.last_name|capfirst }}</h5>
-          <p>{{ user.email }}</p>
           <a href="{% url 'profile_settings' %}" class="btn-edit">Edit Profile</a>
         </div>
 
@@ -43,6 +42,11 @@
               <input type="text" class="form-control" value="{{ user.username }}" readonly>
             </div>
             <div class="col-md-6">
+              <label class="form-label">Contact Number</label>
+              <input type="text" class="form-control" value="{{ user.contact_number|default:'Not Set' }}" readonly>
+            </div>
+            
+            <div class="col-md-12">
               <label class="form-label">Email</label>
               <input type="email" class="form-control" value="{{ user.email }}" readonly>
             </div>
@@ -91,12 +95,6 @@
             </div>
           </div>
           {% endif %}
-          
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Contact Number</label>
-              <input type="text" class="form-control" value="{{ user.contact_number|default:'Not Set' }}" readonly>
-            </div>
         </div>
       </div>
     </div>
@@ -127,6 +125,7 @@
 
   .profile-container {
     display: flex;
+    margin: 50px;
     justify-content: center;
     align-items: center;
     min-height: 80vh;
@@ -142,7 +141,7 @@
   }
 
   .profile-header {
-    background: linear-gradient(45deg, #2a9d8f, #1f7f67);
+    background: linear-gradient(45deg, #457b9d, #1d3557);
     color: white;
     text-align: center;
     padding: 20px;
@@ -158,7 +157,7 @@
   .profile-pic {
     width: 150px;
     height: 150px;
-    border: 4px solid #2a9d8f;
+    border: 4px solid #1d3557;
     object-fit: cover;
   }
 
@@ -168,7 +167,7 @@
     padding: 10px 20px;
     font-size: 1rem;
     color: white;
-    background: #2a9d8f;
+    background: linear-gradient(45deg, #457b9d, #1d3557);
     border: none;
     border-radius: 25px;
     cursor: pointer;
@@ -198,6 +197,30 @@
   .form-control:focus {
     border-color: #2a9d8f;
     box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
+  }
+
+  /* Ensure profile picture div is centered */
+  .col-md-3.d-flex {
+    min-height: 100%;
+    padding: 20px 0;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 767px) {
+    .profile-card {
+      width: 100%;
+      margin: 20px;
+    }
+    .col-md-3.d-flex {
+      padding: 10px 0;
+    }
+    .profile-pic {
+      width: 120px;
+      height: 120px;
+    }
+    .profile-container {
+      margin: 20px;
+    }
   }
 </style>
 {% endblock %}

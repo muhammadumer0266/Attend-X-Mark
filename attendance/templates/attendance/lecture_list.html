@@ -3,7 +3,8 @@
 {% block title %}My Lectures{% endblock %}
 
 {% block content %}
-<div class="lecture-container">
+<div class="container">
+  <div class="lecture-container">
   <header class="lecture-header">
     <h3>Lectures for {{ request.user.first_name|capfirst }} {{ request.user.last_name|capfirst }}</h3>
   </header>
@@ -29,7 +30,32 @@
             <td data-label="End Time">{{ lecture.end_time }}</td>
             <td data-label="Days">{{ lecture.days_display }}</td>
             <td data-label="Action">
-<a href="{% url 'mark_attendance' lecture_id=lecture.lecture_id class_id=lecture.lecture_class.id %}" class="btn btn-primary btn-sm">Mark Attendance</a>
+              {% if lecture.lecture_id %}
+                <div class="action-buttons">
+                  {% if lecture.has_attendance_record %}
+                    <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-warning btn-sm">
+                      <i class="fas fa-edit"></i> Edit Attendance
+                    </a>
+                    <a href="{% url 'add_makeup_class' lecture.lecture_id %}" class="btn btn-success btn-sm">
+                      <i class="fas fa-plus-circle"></i> Add Makeup Class
+                    </a>
+                  {% else %}
+                    <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-primary btn-sm">
+                      <i class="fas fa-check"></i> Mark Attendance
+                    </a>
+                  {% endif %}
+                  <!-- Updated Capture Face link with lecture_id -->
+                  <a href="{% url 'capture_face' lecture.lecture_id %}" class="btn btn-info btn-sm">
+                    <i class="fas fa-camera"></i> Capture Face
+                  </a>
+                  <!-- View Report link -->
+                  <a href="{% url 'student_attendance_report' lecture.lecture_id %}" class="btn btn-info btn-sm">
+                    <i class="fas fa-eye"></i> View Report
+                  </a>
+                </div>
+              {% else %}
+                <span class="text-muted">No ID</span>
+              {% endif %}
             </td>
           </tr>
         {% empty %}
@@ -40,6 +66,7 @@
       </tbody>
     </table>
   </div>
+</div>
 </div>
 
 <style>
@@ -97,11 +124,52 @@
     border-radius: 5px;
     font-weight: 600;
     transition: background 0.3s ease;
+    margin: 2px;
+  }
+
+  .btn-warning {
+    background: #f0ad4e;
+  }
+
+  .btn-success {
+    background: #28a745;
+  }
+
+  /* Added styling for btn-info */
+  .btn-info {
+    background: #17a2b8;
   }
 
   .btn:hover {
     background: #1d3557;
-    color:wheat;
+    color: wheat;
+  }
+
+  .btn-warning:hover {
+    background: #ec971f;
+    color: wheat;
+  }
+
+  .btn-success:hover {
+    background: #218838;
+    color: wheat;
+  }
+
+  .btn-info:hover {
+    background: #138496;
+    color: wheat;
+  }
+
+  /* Action buttons container */
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn i {
+    margin-right: 5px;
   }
 
   /* No lectures message */
@@ -132,6 +200,10 @@
     .btn {
       padding: 4px 8px;
       font-size: 14px;
+    }
+
+    .action-buttons {
+      gap: 8px;
     }
   }
 
@@ -170,7 +242,7 @@
     .lecture-table tr {
       margin: 15px 10px;
       border: none;
-      border:rgba(0, 0, 0, 0.15) solid 1px;
+      border: rgba(0, 0, 0, 0.15) solid 1px;
       border-radius: 12px;
       background: linear-gradient(145deg, #ffffff, #e6e6e6);
       box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.1),
@@ -224,6 +296,11 @@
       padding: 15px;
     }
 
+    .action-buttons {
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .btn {
       background: linear-gradient(45deg, #457b9d, #1d3557);
       padding: 8px 15px;
@@ -231,6 +308,21 @@
       border-radius: 25px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       transition: transform 0.1s ease, box-shadow 0.1s ease;
+      width: 100%;
+      text-align: center;
+    }
+
+    .btn-warning {
+      background: linear-gradient(45deg, #f0ad4e, #ec971f);
+    }
+
+    .btn-success {
+      background: linear-gradient(45deg, #28a745, #218838);
+    }
+
+    /* Added mobile styling for btn-info */
+    .btn-info {
+      background: linear-gradient(45deg, #17a2b8, #138496);
     }
 
     .btn:hover,
@@ -238,6 +330,21 @@
       transform: scale(1.05);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       background: linear-gradient(45deg, #1d3557, #457b9d);
+    }
+
+    .btn-warning:hover,
+    .btn-warning:active {
+      background: linear-gradient(45deg, #ec971f, #f0ad4e);
+    }
+
+    .btn-success:hover,
+    .btn-success:active {
+      background: linear-gradient(45deg, #218838, #28a745);
+    }
+
+    .btn-info:hover,
+    .btn-info:active {
+      background: linear-gradient(45deg, #138496, #17a2b8);
     }
 
     .no-lectures {

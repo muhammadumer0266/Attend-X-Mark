@@ -15,6 +15,7 @@
   <meta property="og:description" content="Smart Attendance Solution ">
   <meta property="og:image" content="https://opengraph.b-cdn.net/production/images/7f83d11b-8842-4e4b-8952-89aca064d263.png?token=OCU2m1Arh5JXPHyrObNqirmt5oFjBhGjfkaXFsYg01A&amp;height=630&amp;width=1200&amp;expires=33276675272">
 
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="twitter:domain" content="umerg.pythonanywhere.com">
@@ -45,7 +46,7 @@
     body {
       font-family: 'Poppins', 'Montserrat', 'Open Sans', -apple-system, sans-serif !important;
       background: #f8f9fa;
-      min-height: 100vh;
+      min-height: 100% !import;
       margin: 0;
       overflow-x: hidden;
     }
@@ -133,7 +134,7 @@
     /* Navbar Styles */
     .navbar {
       padding: 1rem;
-      background: #0C4B33;
+      background: linear-gradient(45deg, #457b9d, #1d3557);
     }
 
     .navbar-brand {
@@ -179,7 +180,7 @@
       margin-top: 20px;
       padding: 15px 0;
       bottom: 0;
-      background: #44B78B;
+      background: linear-gradient(45deg, #457b9d, #1d3557);
       color: #FFFFFF;
       text-align: center;
     }
@@ -354,7 +355,7 @@
   </nav>
 
   <!-- Content -->
-  <div class="container mt-5" style="min-height:60vh;">
+  <div style="min-height:83vh;">
     {% block content %}
     {% endblock %}
   </div>

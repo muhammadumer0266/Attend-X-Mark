@@ -21,17 +21,113 @@ def home(request):
     return render(request, 'accounts/home.html')
 
 
-# Register View
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
+from django.contrib import messages
+from .forms import CustomUserCreationForm
+
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            messages.success(request, 'Registration successful!')
             return redirect('dashboard')
+        else:
+            for error in form.errors.get('captcha', []):
+                messages.error(request, 'Please complete the reCAPTCHA.')
     else:
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
+
+
+
+from django.contrib.auth.views import LoginView
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.core.mail import send_mail
+from django.conf import settings
+from .forms import CustomAuthenticationForm
+from django.contrib.auth import authenticate, get_user_model
+
+class CustomLoginView(LoginView):
+    template_name = 'accounts/login.html'
+    redirect_authenticated_user = True
+    success_url = reverse_lazy('dashboard')
+    form_class = CustomAuthenticationForm
+
+    def form_invalid(self, form):
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password')
+        CustomUser = get_user_model()
+
+        # Check for reCAPTCHA errors
+        for error in form.errors.get('captcha', []):
+            messages.error(self.request, 'Please complete the reCAPTCHA.', extra_tags='login_error')
+        
+        # Check for authentication errors
+        if username and password:
+            user = authenticate(self.request, username=username, password=password)
+            if user is None:
+                # Check if the username exists
+                if not CustomUser.objects.filter(username=username).exists():
+                    messages.error(self.request, 'Invalid username.', extra_tags='login_error')
+                else:
+                    messages.error(self.request, 'You are entering the wrong password.', extra_tags='login_error')
+        
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        
+        # Send success email
+        user = self.request.user
+        subject = 'Successful Login to AttendXMark'
+        message = f'Hello {user.username},\n\nYou have successfully logged in to your AttendXMark account.\n\nBest regards,\nThe AttendXMark Team'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+        
+        try:
+            send_mail(
+                subject,
+                message,
+                from_email,
+                recipient_list,
+                fail_silently=False,
+            )
+        except Exception as e:
+            messages.warning(self.request, 'Login successful, but failed to send confirmation email.', extra_tags='login_error')
+        
+        return response
+
+    def get_success_url(self):
+        return self.success_url
+
+@login_required(login_url="/accounts/login/")
+def dashboard(request):
+    staff_users = CustomUser.objects.filter(is_staff=True)
+    current_date = datetime.now().strftime("%B %d, %Y")
+
+    if request.user.is_superuser:
+        pending_leaves_count = Leave.objects.filter(status='Pending').count()
+    elif request.user.is_teacher:
+        pending_leaves_count = Leave.objects.filter(
+            teacher=request.user, status='Pending'
+        ).count()
+    elif request.user.is_student:
+        pending_leaves_count = Leave.objects.filter(
+            user=request.user, status='Pending'
+        ).count()
+    else:
+        pending_leaves_count = 0
+
+    return render(request, 'accounts/dashboard.html', {
+        'staff_users': staff_users,
+        'current_date': current_date,
+        'pending_leaves_count': pending_leaves_count
+    })
+
 
 # accounts/views.py
 from django.shortcuts import render, redirect
@@ -89,39 +185,6 @@ def personal_info(request):
         'is_student': user.is_student
     }
     return render(request, 'accounts/personal_info.html', context)
-
-class CustomLoginView(LoginView):
-    template_name = 'accounts/login.html'
-    redirect_authenticated_user = True
-    success_url = reverse_lazy('dashboard')
-
-    def get_success_url(self):
-        return self.success_url
-
-@login_required(login_url="/accounts/login/")
-def dashboard(request):
-    staff_users = CustomUser.objects.filter(is_staff=True)
-    current_date = datetime.now().strftime("%B %d, %Y")
-
-    if request.user.is_superuser:
-        pending_leaves_count = Leave.objects.filter(status='Pending').count()
-    elif request.user.is_teacher:
-        pending_leaves_count = Leave.objects.filter(
-            teacher=request.user, status='Pending'
-        ).count()
-    elif request.user.is_student:
-        pending_leaves_count = Leave.objects.filter(
-            user=request.user, status='Pending'
-        ).count()
-    else:
-        pending_leaves_count = 0
-
-    return render(request, 'accounts/dashboard.html', {
-        'staff_users': staff_users,
-        'current_date': current_date,
-        'pending_leaves_count': pending_leaves_count
-    })
-
 
 @login_required(redirect_field_name='login')
 def profile(request):

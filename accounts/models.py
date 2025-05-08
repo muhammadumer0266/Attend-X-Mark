@@ -1,13 +1,20 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models.signals import pre_save, post_save
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
-from django.db.models.signals import post_save
 from django.dispatch import receiver
 from subjects.models import DegreeLevel, Discipline, Semester, Department
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.translation import gettext_lazy as _
+import pickle
+import numpy as np
+from PIL import Image
+import io
+from facenet_pytorch import MTCNN, InceptionResnetV1
+import torch
+
+# Initialize MTCNN and InceptionResnetV1 for face detection and embedding
+mtcnn = MTCNN(image_size=160, margin=0, min_face_size=20)
+resnet = InceptionResnetV1(pretrained='vggface2').eval()
 
 # Custom Manager for User
 class CustomUserManager(BaseUserManager):
@@ -29,7 +36,6 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
         return self.create_user(email, first_name, last_name, password, **extra_fields)
 
-
 # Custom User Model
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     profile_picture = models.ImageField(upload_to='profile_pics/', default='profile_pics/defpic.png')
@@ -49,7 +55,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     email = models.EmailField(unique=True)
-    contact_number = PhoneNumberField(_("Contact Number"), region="PK",blank=True, null=True)
+    contact_number = PhoneNumberField(_("Contact Number"), region="PK", blank=True, null=True)
     face_encoding = models.BinaryField(blank=True, null=True)
 
     # Link to Semester model in subjects app
@@ -69,13 +75,54 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-
 # Signal to automatically set username from email
 @receiver(pre_save, sender=CustomUser)
 def set_username_from_email(sender, instance, **kwargs):
     if instance.email and not instance.username:
         instance.username = instance.email.split('@')[0]
 
+# Signal to generate face encoding from profile picture
+@receiver(post_save, sender=CustomUser)
+def generate_face_encoding(sender, instance, created, **kwargs):
+    if instance.profile_picture and instance.profile_picture != 'profile_pics/defpic.png':
+        try:
+            # Open the profile picture
+            img = Image.open(instance.profile_picture.path).convert('RGB')
+            
+            # Detect face and get embedding
+            img_cropped = mtcnn(img)
+            if img_cropped is not None:
+                img_cropped = img_cropped.unsqueeze(0)  # Add batch dimension
+                with torch.no_grad():
+                    embedding = resnet(img_cropped).detach().cpu().numpy()
+                
+                # Serialize the embedding using pickle
+                embedding_bytes = pickle.dumps(embedding)
+                
+                # Disconnect the signal to prevent recursion
+                post_save.disconnect(generate_face_encoding, sender=CustomUser)
+                try:
+                    instance.face_encoding = embedding_bytes
+                    instance.save(update_fields=['face_encoding'])
+                finally:
+                    # Reconnect the signal
+                    post_save.connect(generate_face_encoding, sender=CustomUser)
+            else:
+                # No face detected, clear the face_encoding
+                post_save.disconnect(generate_face_encoding, sender=CustomUser)
+                try:
+                    instance.face_encoding = None
+                    instance.save(update_fields=['face_encoding'])
+                finally:
+                    post_save.connect(generate_face_encoding, sender=CustomUser)
+        except Exception as e:
+            print(f"Error generating face encoding for {instance.email}: {str(e)}")
+            post_save.disconnect(generate_face_encoding, sender=CustomUser)
+            try:
+                instance.face_encoding = None
+                instance.save(update_fields=['face_encoding'])
+            finally:
+                post_save.connect(generate_face_encoding, sender=CustomUser)
 
 # Signal to create/update Teacher or Student after CustomUser is saved
 @receiver(post_save, sender=CustomUser)
@@ -84,45 +131,58 @@ def create_teacher_or_student(sender, instance, created, **kwargs):
     if instance.is_teacher and instance.is_student:
         raise ValueError("A user cannot be both a teacher and a student.")
 
-    # Handle Teacher creation/update
-    if instance.is_teacher:
-        Teacher.objects.update_or_create(
-            id=instance.id,
-            defaults={
-                'profile_picture': instance.profile_picture,
-                'status': instance.status,
-                'username': instance.username,
-                'first_name': instance.first_name,
-                'last_name': instance.last_name,
-                'email': instance.email,
-                'password': instance.password,
-                'face_encoding': instance.face_encoding,
-                'is_teacher': True,
-                'is_student': False,
-                'is_active': instance.is_active,
-                'is_staff': True,  # Teachers are staff
-            }
-        )
-    # Handle Student creation/update
-    elif instance.is_student:
-        Student.objects.update_or_create(
-            id=instance.id,
-            defaults={
-                'profile_picture': instance.profile_picture,
-                'status': instance.status,
-                'username': instance.username,
-                'first_name': instance.first_name,
-                'last_name': instance.last_name,
-                'email': instance.email,
-                'password': instance.password,
-                'face_encoding': instance.face_encoding,
-                'is_teacher': False,
-                'is_student': True,
-                'is_active': instance.is_active,
-                'is_staff': False,  # Students are not staff
-            }
-        )
-
+    # Disconnect signals to prevent recursion
+    post_save.disconnect(create_teacher_or_student, sender=CustomUser)
+    post_save.disconnect(generate_face_encoding, sender=CustomUser)
+    try:
+        # Handle Teacher creation/update
+        if instance.is_teacher:
+            teacher, _ = Teacher.objects.update_or_create(
+                id=instance.id,
+                defaults={
+                    'profile_picture': instance.profile_picture,
+                    'status': instance.status,
+                    'username': instance.username,
+                    'first_name': instance.first_name,
+                    'last_name': instance.last_name,
+                    'email': instance.email,
+                    'password': instance.password,
+                    'face_encoding': instance.face_encoding,
+                    'is_teacher': True,
+                    'is_student': False,
+                    'is_active': instance.is_active,
+                    'is_staff': True,  # Teachers are staff
+                }
+            )
+            # Update the CustomUser instance with the teacher's password (hashed)
+            instance.password = teacher.password
+            instance.save(update_fields=['password'])
+        # Handle Student creation/update
+        elif instance.is_student:
+            student, _ = Student.objects.update_or_create(
+                id=instance.id,
+                defaults={
+                    'profile_picture': instance.profile_picture,
+                    'status': instance.status,
+                    'username': instance.username,
+                    'first_name': instance.first_name,
+                    'last_name': instance.last_name,
+                    'email': instance.email,
+                    'password': instance.password,
+                    'face_encoding': instance.face_encoding,
+                    'is_teacher': False,
+                    'is_student': True,
+                    'is_active': instance.is_active,
+                    'is_staff': False,  # Students are not staff
+                }
+            )
+            # Update the CustomUser instance with the student's password (hashed)
+            instance.password = student.password
+            instance.save(update_fields=['password'])
+    finally:
+        # Reconnect the signals
+        post_save.connect(create_teacher_or_student, sender=CustomUser)
+        post_save.connect(generate_face_encoding, sender=CustomUser)
 
 # Teacher Model
 class Teacher(CustomUser):
@@ -147,7 +207,7 @@ class Teacher(CustomUser):
     specialization = models.CharField(max_length=255, blank=True, null=True)
     joining_date = models.DateField(blank=True, null=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
-    courses=models.ManyToManyField('subjects.Course', blank=True)
+    courses = models.ManyToManyField('subjects.Course', blank=True)
     
     class Meta:
         verbose_name = "Teacher"
@@ -156,15 +216,14 @@ class Teacher(CustomUser):
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
-from subjects.models import Shift,Section
 # Student Model
 class Student(CustomUser):
     roll_no = models.CharField(max_length=20, unique=True, null=True, blank=True)
     degree_level = models.ForeignKey(DegreeLevel, on_delete=models.SET_NULL, null=True, blank=True)
     discipline = models.ForeignKey(Discipline, on_delete=models.SET_NULL, null=True, blank=True)
     semester = models.ForeignKey(Semester, on_delete=models.SET_NULL, null=True, blank=True)
-    shift = models.ForeignKey(Shift, on_delete=models.SET_NULL, null=True, blank=True)
-    section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, blank=True)
+    shift = models.ForeignKey('subjects.Shift', on_delete=models.SET_NULL, null=True, blank=True)
+    section = models.ForeignKey('subjects.Section', on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = "Student"
@@ -172,4 +231,3 @@ class Student(CustomUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.roll_no or self.email})"
-

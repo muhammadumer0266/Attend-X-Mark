@@ -1,20 +1,20 @@
 {% extends 'base.html' %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Unblock Device{% endblock %}
 
 {% block content %}
-<div class="login-container">
-  <div class="login-card">
-    <div class="login-header">
-      <h4>AttendXMark Login</h4>
+<div class="lockout-container">
+  <div class="lockout-card">
+    <div class="lockout-header">
+      <h4>Unblock Device</h4>
     </div>
-    <div class="login-body">
+    <div class="lockout-body">
       <!-- Messages -->
       {% if messages %}
         <div class="alert alert-danger">
           <ul>
             {% for message in messages %}
-              {% if message.tags == 'login_error' %}
+              {% if message.tags == 'lockout_error' %}
                 <li>{{ message }}</li>
               {% endif %}
             {% endfor %}
@@ -28,22 +28,11 @@
       <form method="POST" novalidate>
         {% csrf_token %}
         <div class="form-group">
-          {{ form.username.label_tag }}
-          {{ form.username }}
-          {% if form.username.errors %}
-            <div class="error">{{ form.username.errors }}</div>
+          <label for="email">Email</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+            <div class="error">{{ form.email.errors }}</div>
           {% endif %}
-        </div>
-        <div class="form-group">
-          {{ form.password.label_tag }}
-          {{ form.password }}
-          {% if form.password.errors %}
-            <div class="error">{{ form.password.errors }}</div>
-          {% endif %}
-          <div class="form-check mt-3">
-            <input type="checkbox" id="showPassword" class="form-check-input" style="width: 10px; height: 10px;">
-            <label for="showPassword" class="form-check-label ms-2 mt-0" style="font-weight:500;">Show Password</label>
-          </div>
         </div>
         <div class="form-group">
           {{ form.captcha }}
@@ -52,47 +41,18 @@
           {% endif %}
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn-login">Login</button>
-        </div>
-        <div class="form-actions mt-2">
-          <small><a href="{% url 'forgot_password' %}">Forgot Password?</a></small>
+          <button type="submit" class="btn-home">Send OTP</button>
         </div>
       </form>
     </div>
-    <div class="login-footer">
-      <small>Don’t have an account? <a href="{% url 'register' %}">Sign Up</a></small>
+    <div class="lockout-footer">
+      <small>Back to <a href="{% url 'login' %}">Login</a></small>
     </div>
   </div>
 </div>
 
-<script>
-  document.getElementById('showPassword').addEventListener('change', function() {
-    const passwordField = document.querySelector('input[name="password"]');
-    passwordField.type = this.checked ? 'text' : 'password';
-  });
-</script>
-
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
-    animation: backgroundFade 5s infinite alternate;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-  }
-
-  @keyframes backgroundFade {
-    0% {
-      background: linear-gradient(135deg, #eafaf1, #d8f3e1);
-    }
-    100% {
-      background: linear-gradient(135deg, #d8f3e1, #eafaf1);
-    }
-  }
-
-  .login-container {
+  .lockout-container {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -100,28 +60,26 @@
     width: 100%;
   }
 
-  .login-card {
+  .lockout-card {
     width: 400px;
-    margin:20px;
     background: #ffffff;
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     overflow: hidden;
   }
 
-  .login-header {
+  .lockout-header {
     background: linear-gradient(45deg, #457b9d, #1d3557);
     color: white;
     text-align: center;
     padding: 20px;
     font-size: 1.5rem;
-    font-weight: bold;
   }
 
-  .login-body {
+  .lockout-body {
     padding: 20px;
   }
-  
+
   .form-group {
     margin: 15px;
   }
@@ -159,7 +117,7 @@
     margin-top: 20px;
   }
 
-  .btn-login {
+  .btn-home {
     display: inline-block;
     padding: 10px 20px;
     font-size: 1rem;
@@ -171,12 +129,12 @@
     transition: background 0.3s, transform 0.2s;
   }
 
-  .btn-login:hover {
+  .btn-home:hover {
     background: #1f7f67;
     transform: scale(1.05);
   }
 
-  .login-footer {
+  .lockout-footer {
     text-align: center;
     background: #f8f9fa;
     padding: 15px;
@@ -184,12 +142,12 @@
     color: #666;
   }
 
-  .login-footer a {
+  .lockout-footer a {
     color: #457b9d;
     text-decoration: none;
   }
 
-  .login-footer a:hover {
+  .lockout-footer a:hover {
     text-decoration: underline;
   }
 
@@ -207,26 +165,5 @@
     font-size: 0.9rem;
     margin-top: 5px;
   }
-
-  .form-check-label {
-    color: #333;
-    font-size: 15px;
-  }
-
-  .form-check {
-    display: flex;
-    align-items: center;
-  }
-
-  .form-check-input {
-    margin-top: 0;
-    height:15px;
-    width:15px;
-  }
-
-  .ms-2 {
-    margin-left: 0.5rem;
-  }
 </style>
-
 {% endblock %}

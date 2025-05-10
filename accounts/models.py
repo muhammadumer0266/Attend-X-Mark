@@ -6,11 +6,14 @@ from subjects.models import DegreeLevel, Discipline, Semester, Department
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils.translation import gettext_lazy as _
 import pickle
-import numpy as np
 from PIL import Image
-import io
 from facenet_pytorch import MTCNN, InceptionResnetV1
 import torch
+from django.conf import settings
+import threading
+import asyncio
+import aiosmtplib
+from email.mime.text import MIMEText
 
 # Initialize MTCNN and InceptionResnetV1 for face detection and embedding
 mtcnn = MTCNN(image_size=160, margin=0, min_face_size=20)
@@ -184,6 +187,72 @@ def create_teacher_or_student(sender, instance, created, **kwargs):
         post_save.connect(create_teacher_or_student, sender=CustomUser)
         post_save.connect(generate_face_encoding, sender=CustomUser)
 
+
+
+# Asynchronous function to send email using aiosmtplib
+async def send_email_async(subject, message, from_email, recipient_list):
+    try:
+        # Create the email message
+        email_message = MIMEText(message)
+        email_message['Subject'] = subject
+        email_message['From'] = from_email
+        email_message['To'] = ', '.join(recipient_list)
+
+        # Connect to the SMTP server and send the email
+        smtp_client = aiosmtplib.SMTP(
+            hostname=settings.EMAIL_HOST,
+            port=settings.EMAIL_PORT,
+            use_tls=settings.EMAIL_USE_TLS,
+        )
+        await smtp_client.connect()
+        await smtp_client.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+        await smtp_client.send_message(email_message)
+        await smtp_client.quit()
+    except Exception as e:
+        print(f"Error sending async email to {recipient_list}: {str(e)}")
+
+# Function to run the async email sending in a new event loop
+def run_async_email(subject, message, from_email, recipient_list):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(send_email_async(subject, message, from_email, recipient_list))
+    finally:
+        loop.close()
+
+# Signal to send email when user is activated
+@receiver(post_save, sender=CustomUser)
+def notify_user_on_approval(sender, instance, created, **kwargs):
+    # Skip if this is a new user creation (we don't want to notify on creation)
+    if created:
+        return
+
+    # Check if the user was updated, status changed to 'approved', and is_active changed to True
+    try:
+        # Fetch the previous state of the instance
+        old_instance = CustomUser.objects.get(pk=instance.pk)
+        # If status changed to 'approved' and is_active changed from False to True
+        if (old_instance.status != 'approved' and instance.status == 'approved' and
+            not old_instance.is_active and instance.is_active):
+            subject = 'Account Activated - AttendXMark'
+            message = (
+                f'Hello {instance.first_name} {instance.last_name},\n\n'
+                'Congratulations! Your account with AttendXMark has been activated by the administrator.\n'
+                'You can now log in to your account using your email and password.\n\n'
+                'Best regards,\nThe AttendXMark Team'
+            )
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [instance.email]
+
+            # Offload the email sending to a separate thread to run asynchronously
+            threading.Thread(
+                target=run_async_email,
+                args=(subject, message, from_email, recipient_list),
+            ).start()
+    except CustomUser.DoesNotExist:
+        # This shouldn't happen, but handle it just in case
+        pass
+
 # Teacher Model
 class Teacher(CustomUser):
     DESIGNATION_CHOICES = (
@@ -231,3 +300,18 @@ class Student(CustomUser):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.roll_no or self.email})"
+    
+
+from django.db import models
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
+
+class PasswordResetOTP(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"OTP for {self.user.username} - {self.otp}"

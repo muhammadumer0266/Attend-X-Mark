@@ -22,19 +22,16 @@ from django.views.generic import RedirectView
 
 
 urlpatterns = [
-    # Redirect to accounts login as the default app
-    path('', RedirectView.as_view(url='/accounts/login/', permanent=True)),
     
+    path('', include('pwa.urls')),  # Add this line
     # Admin site
     path('admin/', admin.site.urls),
     
     # Accounts app (default app)
-    path('accounts/', include('accounts.urls')),
+    path('', include('accounts.urls')),
 
     # Other apps
     path('subjects/', include('subjects.urls')),
     path('attendance/', include('attendance.urls')),
     
-    # PWA URLs (this should always be included to enable PWA on every page)
-    path('', include('pwa.urls')),  # This must come after other apps to avoid conflicts
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

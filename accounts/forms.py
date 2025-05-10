@@ -3,31 +3,21 @@ from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.formfields import PhoneNumberField
 from .models import CustomUser, Teacher, Student
 from subjects.models import Department, DegreeLevel, Discipline, Semester
-
-
-from django import forms
-from accounts.models import CustomUser
+from django_recaptcha.fields import ReCaptchaField
 
 class UserDetailsForm(forms.ModelForm):
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter new password'}),
-        required=False,
-        label='New Password'
-    )
-    confirm_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm new password'}),
-        required=False,
-        label='Confirm Password'
+    profile_picture = forms.FileField(
+        widget=forms.FileInput(attrs={'class': 'd-none', 'accept': 'image/*'}),
+        required=False
     )
 
     class Meta:
         model = CustomUser
-        fields = ['profile_picture', 'first_name', 'last_name', 'email', 'contact_number', 'password']
+        fields = ['first_name', 'last_name', 'email', 'contact_number', 'profile_picture']
         widgets = {
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your first name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your last name'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'}),
             'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your contact number'}),
         }
 
@@ -38,6 +28,18 @@ class UserDetailsForm(forms.ModelForm):
             raise forms.ValidationError('This email is already registered.')
         return email
 
+class ChangePasswordForm(forms.Form):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter new password'}),
+        required=True,
+        label='New Password'
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm new password'}),
+        required=True,
+        label='Confirm Password'
+    )
+
     # Validation for password matching
     def clean(self):
         cleaned_data = super().clean()
@@ -46,22 +48,7 @@ class UserDetailsForm(forms.ModelForm):
 
         if password and confirm_password and password != confirm_password:
             self.add_error('confirm_password', 'Passwords do not match.')
-        elif password and not confirm_password:
-            self.add_error('confirm_password', 'Please confirm your password.')
-        elif confirm_password and not password:
-            self.add_error('password', 'Please enter a password.')
         return cleaned_data
-
-    # Override save to hash the password
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        password = self.cleaned_data.get('password')
-        if password:
-            user.set_password(password)  # Hash the password
-        if commit:
-            user.save()
-        return user
-from django_recaptcha.fields import ReCaptchaField
 
 # Form for creating new users
 class CustomUserCreationForm(UserCreationForm):
@@ -75,6 +62,24 @@ class CustomUserCreationForm(UserCreationForm):
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
         }
 
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField()
+    captcha = ReCaptchaField()
+
+class ResetPasswordForm(forms.Form):
+    otp = forms.CharField(max_length=6)
+    new_password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput)
+    captcha = ReCaptchaField()
+
+class UnblockDeviceForm(forms.Form):
+    email = forms.EmailField()
+    captcha = ReCaptchaField()
+
+class VerifyUnblockOTPForm(forms.Form):
+    otp = forms.CharField(max_length=6)
+    captcha = ReCaptchaField()
+
 from django.contrib.auth.forms import AuthenticationForm
 class CustomAuthenticationForm(AuthenticationForm):
     captcha = ReCaptchaField()
@@ -82,22 +87,29 @@ class CustomAuthenticationForm(AuthenticationForm):
 # Form for Teacher additional information
 class TeacherAdditionalInfoForm(forms.ModelForm):
     contact_number = PhoneNumberField(
-        widget=forms.NumberInput(attrs={'class':'form-control'}),
+        widget=forms.NumberInput(attrs={'class': 'personal-info-input-text'}),
         label='Contact Number',
         region='PK'
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'})
+    )
+    profile_picture = forms.FileField(
+        widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
+        required=False
     )
 
     class Meta:
         model = Teacher
-        fields = ['designation', 'department', 'office_room_number', 'specialization', 'contact_number']
+        fields = ['profile_picture', 'email', 'designation', 'department', 'office_room_number', 'specialization', 'contact_number']
         widgets = {
-            'designation': forms.Select(attrs={'class': 'form-control'}),
-            'department': forms.Select(attrs={'class': 'form-control'}),
+            'designation': forms.Select(attrs={'class': 'personal-info-select'}),
+            'department': forms.Select(attrs={'class': 'personal-info-select'}),
             'office_room_number': forms.TextInput(
-                attrs={'class': 'form-control', 'placeholder': 'Enter office room number'}
+                attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter office room number'}
             ),
             'specialization': forms.TextInput(
-                attrs={'class': 'form-control', 'placeholder': 'Enter specialization'}
+                attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter specialization'}
             ),
         }
 
@@ -105,26 +117,39 @@ class TeacherAdditionalInfoForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['department'].queryset = Department.objects.all()
 
+    # Validation for email uniqueness
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and CustomUser.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
+            raise forms.ValidationError('This email is already registered.')
+        return email
 
 # Form for Student additional information
 class StudentAdditionalInfoForm(forms.ModelForm):
     contact_number = PhoneNumberField(
-        widget=forms.NumberInput(attrs={'class':'form-control'}),
+        widget=forms.NumberInput(attrs={'class': 'personal-info-input-text'}),
         label='Contact Number',
         region='PK'
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'})
+    )
+    profile_picture = forms.FileField(
+        widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
+        required=False
     )
 
     class Meta:
         model = Student
-        fields = ['roll_no', 'degree_level', 'discipline', 'semester', 'contact_number','section']
+        fields = ['profile_picture', 'email', 'roll_no', 'degree_level', 'discipline', 'semester', 'contact_number', 'section']
         widgets = {
             'roll_no': forms.TextInput(
-                attrs={'class': 'form-control', 'placeholder': 'Enter roll number'}
+                attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter roll number'}
             ),
-            'degree_level': forms.Select(attrs={'class': 'form-control'}),
-            'section': forms.Select(attrs={'class': 'form-control'}),
-            'discipline': forms.Select(attrs={'class': 'form-control'}),
-            'semester': forms.Select(attrs={'class': 'form-control'}),
+            'degree_level': forms.Select(attrs={'class': 'personal-info-select'}),
+            'section': forms.Select(attrs={'class': 'personal-info-select'}),
+            'discipline': forms.Select(attrs={'class': 'personal-info-select'}),
+            'semester': forms.Select(attrs={'class': 'personal-info-select'}),
         }
 
     # Validation for roll number
@@ -133,6 +158,13 @@ class StudentAdditionalInfoForm(forms.ModelForm):
         if roll_no and Student.objects.exclude(pk=self.instance.pk).filter(roll_no=roll_no).exists():
             raise forms.ValidationError('This Roll No. is already in use.')
         return roll_no
+
+    # Validation for email uniqueness
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and CustomUser.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
+            raise forms.ValidationError('This email is already registered.')
+        return email
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

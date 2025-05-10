@@ -13,14 +13,35 @@
         {% csrf_token %}
         <div class="form-grid">
           {% for field in form %}
+          {% if field.label != 'Captcha' %}
           <div class="form-group{% if field.label == 'Email' %} email-field{% endif %}">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
             {{ field }}
           </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        <div class="form-group show-password">
+          <label>
+            <input type="checkbox" id="show-password"> Show Password
+          </label>
+        </div>
+        <div class="form-group privacy-policy">
+          <label>
+            <input type="checkbox" id="accept-privacy" required> I accept the &nbsp;<a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a>
+          </label>
+        </div>
+        <div class="form-group captcha-field">
+          {% for field in form %}
+          {% if field.label == 'Captcha' %}
+          <div class="captcha-wrapper">
+            {{ field }}
+          </div>
+          {% endif %}
           {% endfor %}
         </div>
         <div class="form-actions">
-          <button type="submit" class="btn-register">Register</button>
+          <button type="submit" class="btn-register" id="register-btn" disabled>Register</button>
         </div>
       </form>
     </div>
@@ -112,6 +133,61 @@
     box-shadow: 0 0 5px hsl(203, 47.40%, 81.40%);
   }
 
+  .form-group.show-password {
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .form-group.show-password label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .form-group.show-password input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+  }
+
+
+  .form-group .captcha-field {
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .captcha-wrapper {
+    display: inline-block;
+    text-align: center;
+    margin-top:15px;
+  }
+
+  .captcha-wrapper label {
+    display: block;
+    text-align: center;
+  }
+  .captcha-field{
+    align-items:center;
+  }
+  .form-group.privacy-policy {
+    margin-top: 10px;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .form-group.privacy-policy label {
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .form-group.privacy-policy input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+  }
+
   .form-actions {
     text-align: center;
     margin-top: 20px;
@@ -127,9 +203,14 @@
     border-radius: 25px;
     cursor: pointer;
     transition: background 0.3s, transform 0.2s;
+    opacity: 0.6;
   }
 
-  .btn-register:hover {
+  .btn-register:enabled {
+    opacity: 1;
+  }
+
+  .btn-register:hover:enabled {
     background: #1f7f67;
     transform: scale(1.05);
   }
@@ -148,4 +229,24 @@
     }
   }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const showPasswordCheckbox = document.getElementById('show-password');
+    const passwordField = document.querySelector('input[name="password1"]');
+    const confirmPasswordField = document.querySelector('input[name="password2"]');
+    const acceptPrivacyCheckbox = document.getElementById('accept-privacy');
+    const registerBtn = document.getElementById('register-btn');
+
+    showPasswordCheckbox.addEventListener('change', function () {
+      const type = this.checked ? 'text' : 'password';
+      passwordField.type = type;
+      confirmPasswordField.type = type;
+    });
+
+    acceptPrivacyCheckbox.addEventListener('change', function () {
+      registerBtn.disabled = !this.checked;
+    });
+  });
+</script>
 {% endblock %}

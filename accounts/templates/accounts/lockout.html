@@ -8,8 +8,9 @@
         </div>
         <div class="lockout-body">
             <p>Too many failed login attempts. Your account is locked for 1 hour.</p>
-            <p>Please try again later or contact support.</p>
-            <a href="{% url 'home' %}" class="btn-home">Return to Home</a>
+            <p>Please try again later or unblock your device using the link below.</p>
+            <a href="{% url 'unblock_device_request' %}" class="btn-home mt-2">Unblock Device</a>
+            <a href="{% url 'home' %}" class="btn-home mt-2">Return to Home</a>
         </div>
     </div>
 </div>
@@ -49,10 +50,14 @@
         border-radius: 25px;
         text-decoration: none;
         transition: background 0.3s, transform 0.2s;
+        margin: 5px;
     }
     .btn-home:hover {
         background: #1f7f67;
         transform: scale(1.05);
+    }
+    .mt-2 {
+        margin-top: 0.5rem;
     }
 </style>
 {% endblock %}

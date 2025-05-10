@@ -97,49 +97,67 @@ MIDDLEWARE = [
     'axes.middleware.AxesMiddleware', #axes middleware
 ]
 
+############################################################             PWA                     ############################################################
 
-
-############################################################PWA############################################################
 import os
-PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'accounts/static/js/serviceworker.js')
 
-PWA_APP_NAME = 'AttendXMark'
-PWA_APP_DESCRIPTION = "Smart Attendance System"
+# PWA settings
+PWA_APP_NAME = 'AXM Project'
+PWA_APP_DESCRIPTION = 'A Progressive Web App for AXM Project'
 PWA_APP_THEME_COLOR = '#000000'
 PWA_APP_BACKGROUND_COLOR = '#ffffff'
 PWA_APP_DISPLAY = 'standalone'
 PWA_APP_SCOPE = '/'
 PWA_APP_ORIENTATION = 'any'
-PWA_APP_START_URL = '/accounts/login/'
+PWA_APP_START_URL = '/'
 PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_ICONS = [
-	{
-		'src': 'static/images/web-app-manifest-192x192.png',
-		'sizes': '160x160'
-	}
+    {
+        'src': '/static/images/icons/icon-160x160.png',
+        'sizes': '160x160',
+        'type': 'image/png'
+    }
 ]
 PWA_APP_ICONS_APPLE = [
-	{
-		'src': 'static/images/apple-touch-icon.png',
-		'sizes': '160x160'
-	}
+    {
+        'src': '/static/images/icons/icon-160x160.png',
+        'sizes': '160x160',
+        'type': 'image/png'
+    }
 ]
 PWA_APP_SPLASH_SCREEN = [
-	{
-		'src': 'static/images/web-app-manifest-192x192.png',
-		'media': '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
-	}
+    {
+        'src': '/static/images/icons/splash-640x1136.png',
+        'media': '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
+    }
 ]
 PWA_APP_DIR = 'ltr'
 PWA_APP_LANG = 'en-US'
+PWA_APP_SHORTCUTS = [
+    {
+        'name': 'Dashboard',
+        'url': '/dashboard/',
+        'description': 'Go to the dashboard'
+    }
+]
+PWA_APP_SCREENSHOTS = [
+    {
+        'src': '/static/images/icons/splash-750x1334.png',
+        'sizes': '750x1334',
+        'type': 'image/png'
+    }
+]
+
+# Service worker path
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'axm_project', 'static', 'serviceworker.js')
 
 ##########################################################################################################################
 
 
 AUTH_USER_MODEL = 'accounts.CustomUser'  # Custom user model
 LOGIN_REDIRECT_URL = '/dashboard/'  # Where users go after login
-LOGOUT_REDIRECT_URL = '/accounts/login/'  # Where users go after logout
-LOGIN_URL = '/accounts/login/'  # URL for login page
+LOGOUT_REDIRECT_URL = '/login/'  # Where users go after logout
+LOGIN_URL = '/login/'  # URL for login page
 ROOT_URLCONF = 'axm_project.urls'
 
 TEMPLATES = [
@@ -223,3 +241,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'axm_project', 'static'),
+]

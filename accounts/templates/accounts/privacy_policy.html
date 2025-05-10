@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+<div class="container" id="container">
+  <h1>Privacy Policy for AttendXMark</h1>
+  <p>Effective Date: May 10, 2025</p>
+
+  <h2>1. Commitment to Privacy and Confidentiality</h2>
+  <p>AttendXMark is committed to protecting the privacy, security, and confidentiality of every user's data. This Privacy Policy outlines how we handle your information and the measures we adopt to ensure your data remains safe and secure.</p>
+  <p>We recognize the importance of safeguarding your personal and activity data. AttendXMark will collect, use, and store user data only for legitimate purposes and in strict accordance with applicable data protection laws. Access to user information is strictly limited and granted only on a need-to-know basis.</p>
+
+  <h2>2. Security Practices and Preventive Measures</h2>
+  <p>To ensure the highest standards of protection, AttendXMark implements industry-leading security practices, including but not limited to:</p>
+  <ul>
+    <li>End-to-end encryption for data transmission and storage.</li>
+    <li>Regular penetration testing and security audits.</li>
+    <li>Multi-factor authentication (MFA) for user and administrator access.</li>
+    <li>Automated monitoring for suspicious activities and unauthorized access attempts.</li>
+    <li>Role-based access control (RBAC) to enforce the principle of least privilege.</li>
+  </ul>
+
+  <h2>3. Adoption of a Zero Trust Architecture</h2>
+  <p>AttendXMark follows a Zero Trust security model, which means:</p>
+  <ul>
+    <li>No device or user is automatically trusted, regardless of location or prior access.</li>
+    <li>Every access request is continuously verified using authentication, authorization, and context.</li>
+    <li>Data and systems are segmented to reduce exposure in case of breach attempts.</li>
+    <li>Internal and external communications are secured and encrypted.</li>
+  </ul>
+  <p>This model greatly enhances the resilience of the system against data breaches, insider threats, and other cybercrimes.</p>
+
+  <h2>4. Protection from Common Vulnerabilities and Threats</h2>
+  <p>We are vigilant in maintaining defenses against widely known and emerging security threats, including:</p>
+  <ul>
+    <li>SQL injection, XSS, CSRF, and other web application attacks.</li>
+    <li>Ransomware, malware, and phishing attempts.</li>
+    <li>Data exfiltration and man-in-the-middle (MitM) attacks.</li>
+  </ul>
+  <p>We comply with leading frameworks such as OWASP Top 10 and conduct regular vulnerability assessments.</p>
+
+  <h2>5. User Rights and Transparency</h2>
+  <p>Users have full rights over their data, including:</p>
+  <ul>
+    <li>Accessing their personal information.</li>
+    <li>Requesting correction or deletion.</li>
+    <li>Reviewing how their data is used.</li>
+    <li>Opting out of non-essential data processing.</li>
+  </ul>
+  <p>Requests can be made via <a href="mailto:attendxmark@gmail.com">attendxmark@gmail.com</a>, and will be addressed within 3 to 4 working days as per legal obligations.</p>
+
+  <h2>6. Policy Updates</h2>
+  <p>This Privacy Policy may be updated periodically to reflect changes in our practices or legal requirements. Users will be notified of significant changes via the app or official channels.</p>
+
+  <div class="footer">
+    <p>Contact Us</p>
+    <p>Email: <a href="mailto:attendxmark@gmail.com">attendxmark@gmail.com</a></p>
+  </div>
+</div>
+
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #f0f7f4, #e0ece6);
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #container {
+    max-width: 800px;
+    width: 90%;
+    margin-top:20px;
+    background:white;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1s ease-in;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  h1 {
+    color: #1d3557;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+  }
+  h2 {
+    color: #457b9d;
+    margin-top: 30px;
+    font-size: 1.5rem;
+  }
+  p {
+    color: #333;
+    line-height: 1.6;
+    margin: 15px 0;
+    font-size: 1rem;
+  }
+  ul {
+    color: #333;
+    line-height: 1.6;
+    margin: 15px 0 15px 20px;
+  }
+  a {
+    color: #1d3557;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+{% endblock %}

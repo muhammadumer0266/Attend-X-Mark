@@ -5,7 +5,8 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.urls import reverse_lazy
-from datetime import datetime
+
+from django.utils import timezone
 
 from .forms import (
     CustomUserCreationForm,
@@ -30,10 +31,36 @@ def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Registration successful!')
-            return redirect('dashboard')
+            # Save the user with is_active=False and status='pending'
+            user = form.save(commit=False)
+            user.is_active = False  # User cannot log in until approved
+            user.status = 'pending'  # Ensure status is set to pending
+            user.save()
+            
+            # Send email to user notifying them of the pending approval
+            subject = 'Registration Request Received - AttendXMark'
+            message = (
+                f'Hello {user.first_name} {user.last_name},\n\n'
+                'Your registration request has been successfully submitted to AttendXMark.\n'
+                'Please wait for administrator approval. We will notify you via email once your account is approved.\n\n'
+                'Best regards,\nThe AttendXMark Team'
+            )
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [user.email]
+            
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    from_email,
+                    recipient_list,
+                    fail_silently=False,
+                )
+            except Exception as e:
+                messages.warning(request, 'Registration submitted, but failed to send confirmation email.')
+            
+            messages.success(request, 'Your registration request has been submitted. Please wait for administrator approval.')
+            return redirect('login')  # Redirect to login page or a confirmation page
         else:
             for error in form.errors.get('captcha', []):
                 messages.error(request, 'Please complete the reCAPTCHA.')
@@ -41,15 +68,19 @@ def register(request):
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
 
-
-
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.core.mail import send_mail
 from django.conf import settings
-from .forms import CustomAuthenticationForm
+from .forms import CustomAuthenticationForm, ForgotPasswordForm, ResetPasswordForm, UnblockDeviceForm, VerifyUnblockOTPForm
 from django.contrib.auth import authenticate, get_user_model
+from django.shortcuts import render, redirect
+from django.utils.crypto import get_random_string
+from .models import PasswordResetOTP
+from django.utils import timezone
+from axes.helpers import get_client_ip_address
+from axes.models import AccessAttempt
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -62,8 +93,11 @@ class CustomLoginView(LoginView):
         password = form.cleaned_data.get('password')
         CustomUser = get_user_model()
 
+        # Clear any generic non_field_errors to avoid redundancy
+        form._errors.pop('__all__', None)
+
         # Check for reCAPTCHA errors
-        for error in form.errors.get('captcha', []):
+        if 'captcha' in form.errors:
             messages.error(self.request, 'Please complete the reCAPTCHA.', extra_tags='login_error')
         
         # Check for authentication errors
@@ -104,10 +138,138 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         return self.success_url
 
+def forgot_password(request):
+    if request.method == 'POST':
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            CustomUser = get_user_model()
+            try:
+                user = CustomUser.objects.get(email=email)
+                # Generate a 6-digit OTP
+                otp = get_random_string(length=6, allowed_chars='0123456789')
+                # Save OTP to the database
+                PasswordResetOTP.objects.create(user=user, otp=otp)
+                # Send OTP via email
+                subject = 'Password Reset OTP - AttendXMark'
+                message = f'Hello {user.username},\n\nYour OTP for password reset is: {otp}\n\nPlease use this OTP to reset your password. This OTP is valid for 10 minutes.\n\nBest regards,\nThe AttendXMark Team'
+                from_email = settings.DEFAULT_FROM_EMAIL
+                recipient_list = [user.email]
+                send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+                messages.success(request, 'An OTP has been sent to your email.', extra_tags='login_error')
+                return redirect('reset_password')
+            except CustomUser.DoesNotExist:
+                messages.error(request, 'No user found with this email.', extra_tags='login_error')
+        else:
+            if 'captcha' in form.errors:
+                messages.error(request, 'Please complete the reCAPTCHA.', extra_tags='login_error')
+    else:
+        form = ForgotPasswordForm()
+    return render(request, 'accounts/forgot_password.html', {'form': form})
+
+def reset_password(request):
+    if request.method == 'POST':
+        form = ResetPasswordForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data.get('otp')
+            new_password = form.cleaned_data.get('new_password')
+            confirm_password = form.cleaned_data.get('confirm_password')
+            
+            try:
+                otp_record = PasswordResetOTP.objects.get(otp=otp, is_used=False)
+                # Check if OTP is within 10 minutes
+                time_diff = timezone.now() - otp_record.created_at
+                if time_diff.total_seconds() > 600:  # 10 minutes
+                    messages.error(request, 'OTP has expired.', extra_tags='login_error')
+                    return redirect('reset_password')
+                
+                if new_password != confirm_password:
+                    messages.error(request, 'Passwords do not match.', extra_tags='login_error')
+                    return redirect('reset_password')
+                
+                # Reset the password
+                user = otp_record.user
+                user.set_password(new_password)
+                user.save()
+                otp_record.is_used = True
+                otp_record.save()
+                messages.success(request, 'Password reset successfully. Please login with your new password.', extra_tags='login_error')
+                return redirect('login')
+            except PasswordResetOTP.DoesNotExist:
+                messages.error(request, 'Invalid OTP.', extra_tags='login_error')
+                return redirect('reset_password')
+        else:
+            if 'captcha' in form.errors:
+                messages.error(request, 'Please complete the reCAPTCHA.', extra_tags='login_error')
+    else:
+        form = ResetPasswordForm()
+    return render(request, 'accounts/reset_password.html', {'form': form})
+
+def unblock_device_request(request):
+    if request.method == 'POST':
+        form = UnblockDeviceForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            CustomUser = get_user_model()
+            try:
+                user = CustomUser.objects.get(email=email)
+                # Generate a 6-digit OTP
+                otp = get_random_string(length=6, allowed_chars='0123456789')
+                # Save OTP to the database
+                PasswordResetOTP.objects.create(user=user, otp=otp)
+                # Send OTP via email
+                subject = 'Device Unblock OTP - AttendXMark'
+                message = f'Hello {user.username},\n\nYour OTP to unblock your device is: {otp}\n\nPlease use this OTP to unblock your device. This OTP is valid for 10 minutes.\n\nBest regards,\nThe AttendXMark Team'
+                from_email = settings.DEFAULT_FROM_EMAIL
+                recipient_list = [user.email]
+                send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+                messages.success(request, 'An OTP has been sent to your email.', extra_tags='lockout_error')
+                return redirect('unblock_device_verify')
+            except CustomUser.DoesNotExist:
+                messages.error(request, 'No user found with this email.', extra_tags='lockout_error')
+        else:
+            if 'captcha' in form.errors:
+                messages.error(request, 'Please complete the reCAPTCHA.', extra_tags='lockout_error')
+    else:
+        form = UnblockDeviceForm()
+    return render(request, 'accounts/unblock_device_request.html', {'form': form})
+
+def unblock_device_verify(request):
+    if request.method == 'POST':
+        form = VerifyUnblockOTPForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data.get('otp')
+            try:
+                otp_record = PasswordResetOTP.objects.get(otp=otp, is_used=False)
+                # Check if OTP is within 10 minutes
+                time_diff = timezone.now() - otp_record.created_at
+                if time_diff.total_seconds() > 600:  # 10 minutes
+                    messages.error(request, 'OTP has expired.', extra_tags='lockout_error')
+                    return redirect('unblock_device_verify')
+                
+                # Reset Axes lockout for the user's device
+                ip_address = get_client_ip_address(request)
+                AccessAttempt.objects.filter(ip_address=ip_address).delete()
+                
+                # Mark OTP as used
+                otp_record.is_used = True
+                otp_record.save()
+                messages.success(request, 'Your device has been unblocked. Please try logging in again.', extra_tags='lockout_error')
+                return redirect('login')
+            except PasswordResetOTP.DoesNotExist:
+                messages.error(request, 'Invalid OTP.', extra_tags='lockout_error')
+                return redirect('unblock_device_verify')
+        else:
+            if 'captcha' in form.errors:
+                messages.error(request, 'Please complete the reCAPTCHA.', extra_tags='lockout_error')
+    else:
+        form = VerifyUnblockOTPForm()
+    return render(request, 'accounts/unblock_device_verify.html', {'form': form})
+
 @login_required(login_url="/accounts/login/")
 def dashboard(request):
     staff_users = CustomUser.objects.filter(is_staff=True)
-    current_date = datetime.now().strftime("%B %d, %Y")
+    current_date = timezone.now().strftime("%B %d, %Y")
 
     if request.user.is_superuser:
         pending_leaves_count = Leave.objects.filter(status='Pending').count()
@@ -129,47 +291,48 @@ def dashboard(request):
     })
 
 
-# accounts/views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .forms import UserDetailsForm, TeacherAdditionalInfoForm, StudentAdditionalInfoForm
-from .models import Teacher, Student
+from .forms import TeacherAdditionalInfoForm, StudentAdditionalInfoForm
+from .models import Teacher, Student, CustomUser
 
 @login_required(login_url="/login/")
 def personal_info(request):
     user = request.user
-    teacher_form = student_form = None
 
     if request.method == 'POST':
         print("POST request received, files:", request.FILES)  # Debug
-        form = UserDetailsForm(request.POST, request.FILES, instance=user)
-
         if user.is_teacher:
             teacher_instance = Teacher.objects.get(id=user.id)
-            teacher_form = TeacherAdditionalInfoForm(request.POST, instance=teacher_instance)
+            teacher_form = TeacherAdditionalInfoForm(request.POST, request.FILES, instance=teacher_instance)
+            if teacher_form.is_valid():
+                print("Teacher form is valid, saving...")  # Debug
+                teacher = teacher_form.save()
+                # Update the user object's email and profile_picture
+                user.email = teacher_form.cleaned_data['email']
+                if teacher_form.cleaned_data['profile_picture']:
+                    user.profile_picture = teacher_form.cleaned_data['profile_picture']
+                user.save()
+                print("Teacher profile picture after save:", teacher.profile_picture)  # Debug
+                return redirect('profile')
+            else:
+                print("Teacher form errors:", teacher_form.errors)
         elif user.is_student:
             student_instance = Student.objects.get(id=user.id)
-            student_form = StudentAdditionalInfoForm(request.POST, instance=student_instance)
-
-        if form.is_valid() and (not teacher_form or teacher_form.is_valid()) and (not student_form or student_form.is_valid()):
-            print("Form is valid, saving...")  # Debug
-            form.save()
-            if teacher_form:
-                teacher_form.save()
-            if student_form:
-                student_form.save()
-            # Refresh the user object from the database
-            user.refresh_from_db()
-            print("User profile picture after save:", user.profile_picture)  # Debug
-            return redirect('profile')
-        else:
-            print("Form errors:", form.errors)  # Debug
-            if teacher_form:
-                print("Teacher form errors:", teacher_form.errors)
-            if student_form:
+            student_form = StudentAdditionalInfoForm(request.POST, request.FILES, instance=student_instance)
+            if student_form.is_valid():
+                print("Student form is valid, saving...")  # Debug
+                student = student_form.save()
+                # Update the user object's email and profile_picture
+                user.email = student_form.cleaned_data['email']
+                if student_form.cleaned_data['profile_picture']:
+                    user.profile_picture = student_form.cleaned_data['profile_picture']
+                user.save()
+                print("Student profile picture after save:", student.profile_picture)  # Debug
+                return redirect('profile')
+            else:
                 print("Student form errors:", student_form.errors)
     else:
-        form = UserDetailsForm(instance=user)
         if user.is_teacher:
             teacher_instance = Teacher.objects.get(id=user.id)
             teacher_form = TeacherAdditionalInfoForm(instance=teacher_instance)
@@ -178,7 +341,6 @@ def personal_info(request):
             student_form = StudentAdditionalInfoForm(instance=student_instance)
 
     context = {
-        'form': form,
         'teacher_form': teacher_form,
         'student_form': student_form,
         'is_teacher': user.is_teacher,
@@ -202,24 +364,40 @@ def profile(request):
         'student': student
     })
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from .forms import UserDetailsForm, ChangePasswordForm
 
 @login_required(login_url="/login/")
 def profile_settings(request):
     user = request.user
 
     if request.method == 'POST':
-        form = UserDetailsForm(request.POST, request.FILES, instance=user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your profile has been updated successfully!')
-            return redirect('profile_settings')
-        else:
-            messages.error(request, 'Error updating your profile. Please check the form.')
+        # Handle User Details Form
+        if 'update_details' in request.POST:
+            user_form = UserDetailsForm(request.POST, request.FILES, instance=user)
+            if user_form.is_valid():
+                user_form.save()
+                messages.success(request, 'Your profile has been updated successfully!')
+                return redirect('profile')  # Redirect to profile page
+            else:
+                messages.error(request, 'Error updating your profile. Please check the form.')
+        # Handle Password Change Form
+        elif 'change_password' in request.POST:
+            password_form = ChangePasswordForm(request.POST)
+            if password_form.is_valid():
+                user.set_password(password_form.cleaned_data['password'])
+                user.save()
+                messages.success(request, 'Your password has been updated successfully!')
+                return redirect('profile')  # Redirect to profile page
+            else:
+                messages.error(request, 'Error updating your password. Please check the form.')
     else:
-        form = UserDetailsForm(instance=user)
+        user_form = UserDetailsForm(instance=user)
+        password_form = ChangePasswordForm()
 
-    return render(request, 'accounts/profile_settings.html', {'form': form})
-
+    return render(request, 'accounts/profile_settings.html', {'user_form': user_form, 'password_form': password_form})
 
 @login_required(login_url="/accounts/login/")
 def custom_logout_view(request):
@@ -252,3 +430,8 @@ def update_teacher_info(request):
 
 def pending(request):
     return render(request, 'accounts/pending.html')
+def privacy_policy(request):
+    return render(request, 'accounts/privacy_policy.html')
+
+def offline(request):
+    return render(request, 'accounts/offline.html')

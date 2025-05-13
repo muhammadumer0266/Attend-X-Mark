@@ -60,7 +60,6 @@
                 
                 {% if request.user.is_teacher %}
                  <div class="col-md-6"><a href="{% url 'leave_list' %}" style="text-decoration:none;">
-           
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
                          style="animation-delay: 0.4s; border-radius: 15px; background: linear-gradient(135deg, #e67e22, #d35400);">
                         <div class="card-body text-white p-4">
@@ -69,9 +68,7 @@
                             <small>Awaiting Approval</small>
                         </div>
                     </div>
-                         
-              </a>
-           
+                 </a>
                 </div>
             
                 <div class="col-md-6">
@@ -79,7 +76,7 @@
                          style="animation-delay: 0.5s; border-radius: 15px; background: linear-gradient(135deg, #9b59b6, #8e44ad);">
                         <div class="card-body text-white p-4">
                             <h5 class="card-title fw-bold">Total Classes</h5>
-                            <p class="display-5 fw-bold mb-0 count-up" data-target="28">0</p>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="{{ attendance_records_count }}">0</p>
                             <small>This Month</small>
                         </div>
                     </div>

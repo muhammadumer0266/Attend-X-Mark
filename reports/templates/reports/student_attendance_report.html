@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="report-page-container" style="background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
+    <div class="container py-4">
+        <div class="bg-white shadow-lg rounded-lg p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-column flex-md-row">
+                <h2 class="display-6 fw-bold text-dark mb-3 mb-md-0 text-center text-md-start">
+                    Attendance Report for {{ lecture }}
+                </h2>
+                <div class="d-flex flex-column flex-md-row gap-2">
+                    <a href="?download_pdf=true" class="btn btn-outline-danger rounded-pill px-3 py-1">
+                        <i class="fas fa-file-pdf me-1"></i>PDF
+                    </a>
+                    <a href="?download_excel=true" class="btn btn-outline-success rounded-pill px-3 py-1">
+                        <i class="fas fa-file-excel me-1"></i>Excel
+                    </a>
+                </div>
+            </div>
+
+            {% if student_data %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover report-table">
+                        <thead class="table-dark" style="background: #1d3557; color: #ffffff;">
+                            <tr>
+                                <th class="text-left sticky-col" style="background: #1d3557; color: #ffffff; position: sticky; left: 0; z-index: 10;">Roll No</th>
+                                <th class="text-left">Student</th>
+                                {% for record in record_data %}
+                                    <th class="text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span>{{ record.date|date:"d/m/Y" }}</span>
+                                            <a href="{% url 'edit_attendance' lecture_id=lecture.lecture_id attendance_record_id=record.id %}" class="btn btn-sm btn-outline-primary rounded-pill mt-1 edit-btn" style="background: #457b9d; color: #ffffff; border: none;">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </a>
+                                        </div>
+                                    </th>
+                                {% endfor %}
+                                <th class="text-center">Attendance Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in student_data %}
+                                <tr>
+                                    <td class="text-left sticky-col bg-white" style="position: sticky; left: 0; z-index: 1;">{{ student.roll_no }}</td>
+                                    <td class="text-left">{{ student.name }}</td>
+                                    {% for status in student.attendance %}
+                                        <td class="text-center {% if status == 'present' %}text-success{% elif status == 'leave' %}text-primary{% else %}text-danger{% endif %}">
+                                            {{ status|capfirst }}
+                                        </td>
+                                    {% endfor %}
+                                    <td class="text-center">{{ student.percentage }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center text-muted mt-4 fs-5">No attendance records found for this lecture.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Scoped styles to avoid interference */
+    .report-page-container {
+        scroll-behavior: smooth;
+    }
+
+    /* Table cell padding reduced by 5px more */
+    .report-table th, .report-table td {
+        padding: 7px 11px; /* Reduced from 12px 16px (py-3 px-4) to 7px 11px */
+    }
+
+    /* Edit button padding */
+    .edit-btn {
+        padding: 2px 8px;
+        font-size: 0.8rem;
+    }
+
+    /* Sticky column styles */
+    .sticky-col {
+        position: sticky;
+        left: 0;
+        z-index: 10;
+    }
+
+    .sticky-col.bg-white {
+        background: #ffffff;
+        color: #333;
+    }
+
+    /* Hover effect should not override sticky column background */
+    .table-hover tbody tr:hover .sticky-col.bg-white {
+        background: #ffffff;
+    }
+
+    /* Status colors */
+    .text-primary {
+        color: #457b9d !important;
+    }
+
+    .table-dark {
+        background: #1d3557 !important;
+        color: #ffffff !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .report-page-container .container {
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+
+        .report-page-container {
+            padding: 10px;
+        }
+
+        .bg-white {
+            padding: 10px;
+        }
+
+        /* Further reduce table cell padding for mobile */
+        .report-table th, .report-table td {
+            padding: 5px 8px; /* Reduced from 7px 11px to 5px 8px for mobile */
+            font-size: 0.85rem; /* Reduced from 0.9rem (14.4px) to 0.85rem (13.6px) */
+        }
+
+        /* Adjust edit button for mobile */
+        .edit-btn {
+            padding: 1px 6px;
+            font-size: 0.7rem; /* Reduced from 0.8rem (12.8px) to 0.7rem (11.2px) */
+        }
+
+        .d-flex.flex-md-row {
+            flex-direction: column !important;
+            align-items: center;
+        }
+
+        .d-flex.flex-md-row .btn {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+        }
+
+        /* Ensure date and edit button are compact */
+        .d-flex.flex-column.align-items-center {
+            gap: 2px;
+        }
+
+        /* Sticky column on mobile */
+        .sticky-col {
+            min-width: 60px; /* Ensure visibility on mobile */
+        }
+
+        /* Reduce font size for no-records message */
+        .text-muted.fs-5 {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}

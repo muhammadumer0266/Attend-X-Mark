@@ -1,31 +1,34 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import authenticate, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.urls import reverse_lazy
-
 from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from axes.helpers import get_client_ip_address
+from axes.models import AccessAttempt
 
 from .forms import (
     CustomUserCreationForm,
     UserDetailsForm,
+    ChangePasswordForm,
+    CustomAuthenticationForm,
+    ForgotPasswordForm,
+    ResetPasswordForm,
+    UnblockDeviceForm,
+    VerifyUnblockOTPForm,
     TeacherAdditionalInfoForm,
     StudentAdditionalInfoForm
 )
-from .models import CustomUser, Teacher, Student
-from attendance.models import Leave
-
+from .models import CustomUser, Teacher, Student, PasswordResetOTP
+from attendance.models import Leave,AttendanceRecord
 
 def home(request):
     return render(request, 'accounts/home.html')
 
-
-from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from django.contrib import messages
-from .forms import CustomUserCreationForm
 
 def register(request):
     if request.method == 'POST':
@@ -67,20 +70,6 @@ def register(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'accounts/register.html', {'form': form})
-
-from django.contrib.auth.views import LoginView
-from django.contrib import messages
-from django.urls import reverse_lazy
-from django.core.mail import send_mail
-from django.conf import settings
-from .forms import CustomAuthenticationForm, ForgotPasswordForm, ResetPasswordForm, UnblockDeviceForm, VerifyUnblockOTPForm
-from django.contrib.auth import authenticate, get_user_model
-from django.shortcuts import render, redirect
-from django.utils.crypto import get_random_string
-from .models import PasswordResetOTP
-from django.utils import timezone
-from axes.helpers import get_client_ip_address
-from axes.models import AccessAttempt
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -271,6 +260,7 @@ def dashboard(request):
     staff_users = CustomUser.objects.filter(is_staff=True)
     current_date = timezone.now().strftime("%B %d, %Y")
 
+    # Initialize pending leaves count
     if request.user.is_superuser:
         pending_leaves_count = Leave.objects.filter(status='Pending').count()
     elif request.user.is_teacher:
@@ -284,32 +274,43 @@ def dashboard(request):
     else:
         pending_leaves_count = 0
 
+    # Calculate attendance records for the teacher this month
+    attendance_records_count = 0
+    if request.user.is_teacher:
+        current_month = timezone.now().month
+        current_year = timezone.now().year
+        attendance_records_count = AttendanceRecord.objects.filter(
+            lecture__teacher=request.user,
+            date__year=current_year,
+            date__month=current_month
+        ).count()
+
     return render(request, 'accounts/dashboard.html', {
         'staff_users': staff_users,
         'current_date': current_date,
-        'pending_leaves_count': pending_leaves_count
+        'pending_leaves_count': pending_leaves_count,
+        'attendance_records_count': attendance_records_count  # Add to context
     })
-
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .forms import TeacherAdditionalInfoForm, StudentAdditionalInfoForm
-from .models import Teacher, Student, CustomUser
 
 @login_required(login_url="/login/")
 def personal_info(request):
     user = request.user
 
+    # Initialize forms as None
+    teacher_form = None
+    student_form = None
+
     if request.method == 'POST':
         print("POST request received, files:", request.FILES)  # Debug
         if user.is_teacher:
             teacher_instance = Teacher.objects.get(id=user.id)
-            teacher_form = TeacherAdditionalInfoForm(request.POST, request.FILES, instance=teacher_instance)
+            teacher_form = TeacherAdditionalInfoForm(request.POST, request.FIELDS, instance=teacher_instance)
             if teacher_form.is_valid():
                 print("Teacher form is valid, saving...")  # Debug
                 teacher = teacher_form.save()
-                # Update the user object's email and profile_picture
+                # Update the user object's email, contact_number, and profile_picture
                 user.email = teacher_form.cleaned_data['email']
+                user.contact_number = teacher_form.cleaned_data['contact_number']  # Add this line
                 if teacher_form.cleaned_data['profile_picture']:
                     user.profile_picture = teacher_form.cleaned_data['profile_picture']
                 user.save()
@@ -323,8 +324,9 @@ def personal_info(request):
             if student_form.is_valid():
                 print("Student form is valid, saving...")  # Debug
                 student = student_form.save()
-                # Update the user object's email and profile_picture
+                # Update the user object's email, contact_number, and profile_picture
                 user.email = student_form.cleaned_data['email']
+                user.contact_number = student_form.cleaned_data['contact_number']  # Add this line
                 if student_form.cleaned_data['profile_picture']:
                     user.profile_picture = student_form.cleaned_data['profile_picture']
                 user.save()
@@ -364,11 +366,6 @@ def profile(request):
         'student': student
     })
 
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .forms import UserDetailsForm, ChangePasswordForm
-
 @login_required(login_url="/login/")
 def profile_settings(request):
     user = request.user
@@ -399,11 +396,10 @@ def profile_settings(request):
 
     return render(request, 'accounts/profile_settings.html', {'user_form': user_form, 'password_form': password_form})
 
-@login_required(login_url="/accounts/login/")
+@login_required(login_url="/login/")
 def custom_logout_view(request):
     logout(request)
     return redirect('login')
-
 
 @login_required
 def update_teacher_info(request):
@@ -427,9 +423,9 @@ def update_teacher_info(request):
         'teacher': teacher
     })
 
-
 def pending(request):
     return render(request, 'accounts/pending.html')
+
 def privacy_policy(request):
     return render(request, 'accounts/privacy_policy.html')
 

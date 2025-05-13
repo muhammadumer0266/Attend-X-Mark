@@ -102,9 +102,9 @@ MIDDLEWARE = [
 import os
 
 # PWA settings
-PWA_APP_NAME = 'AXM Project'
-PWA_APP_DESCRIPTION = 'A Progressive Web App for AXM Project'
-PWA_APP_THEME_COLOR = '#000000'
+PWA_APP_NAME = 'AttendXMark'
+PWA_APP_DESCRIPTION = 'Smart Attendance Marking System'
+PWA_APP_THEME_COLOR = '#1d3557'
 PWA_APP_BACKGROUND_COLOR = '#ffffff'
 PWA_APP_DISPLAY = 'standalone'
 PWA_APP_SCOPE = '/'
@@ -148,8 +148,18 @@ PWA_APP_SCREENSHOTS = [
     }
 ]
 
-# Service worker path
+# Service worker path   
 PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'axm_project', 'static', 'serviceworker.js')
+
+#######################            celery                      ###################################################################################################
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Karachi'  # Adjust to your timezone
 
 ##########################################################################################################################
 

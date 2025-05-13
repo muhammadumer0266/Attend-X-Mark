@@ -45,6 +45,10 @@
         </div>
       </form>
     </div>
+    
+    <div class="login-footer">
+      <small>Already have an account? <a href="{% url 'login' %}">Login</a></small>
+    </div>
   </div>
 </div>
 
@@ -204,6 +208,7 @@
     cursor: pointer;
     transition: background 0.3s, transform 0.2s;
     opacity: 0.6;
+    cursor:not-allowed;
   }
 
   .btn-register:enabled {
@@ -213,6 +218,7 @@
   .btn-register:hover:enabled {
     background: #1f7f67;
     transform: scale(1.05);
+    cursor:pointer;
   }
 
   /* Responsive Design */
@@ -227,6 +233,23 @@
     .form-group.email-field {
       grid-column: auto; /* Reset to default on smaller screens */
     }
+  }
+  
+  .login-footer {
+    text-align: center;
+    background:rgb(243, 243, 243);
+    padding: 15px;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .login-footer a {
+    color: #457b9d;
+    text-decoration: none;
+  }
+
+  .login-footer a:hover {
+    text-decoration: underline;
   }
 </style>
 

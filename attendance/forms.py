@@ -11,35 +11,60 @@ class LeaveForm(forms.ModelForm):
             'leave_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-
 from django import forms
 from .models import Attendance
 from accounts.models import Student
 
 class AttendanceForm(forms.ModelForm):
-    # Define choices explicitly to avoid blank option
     ATTENDANCE_CHOICES = [
         ('present', 'Present'),
         ('absent', 'Absent'),
         ('leave', 'Leave'),
-        # Add other statuses if needed, e.g., ('late', 'Late')
     ]
-
-    # Use ChoiceField with RadioSelect instead of model field directly
     attendance_status = forms.ChoiceField(
         choices=ATTENDANCE_CHOICES,
         widget=forms.RadioSelect,
-        required=True,  # Ensure no blank option
+        required=True,
     )
 
     class Meta:
         model = Attendance
-        fields = ['student', 'attendance_status']
+        fields = ['attendance_status']
         widgets = {
             'student': forms.HiddenInput(),
         }
 
-AttendanceFormSet = forms.modelformset_factory(
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['attendance_status'].initial = self.instance.attendance_status
+
+class AttendanceEditForm(forms.ModelForm):
+    ATTENDANCE_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave'),
+    ]
+    attendance_status = forms.ChoiceField(
+        choices=ATTENDANCE_CHOICES,
+        widget=forms.Select,
+        required=True,
+    )
+
+    class Meta:
+        model = Attendance
+        fields = ['attendance_status']
+        widgets = {
+            'student': forms.HiddenInput(),
+            'attendance_record': forms.HiddenInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['attendance_status'].initial = self.instance.attendance_status
+
+AttendanceFormSet = modelformset_factory(
     Attendance,
     form=AttendanceForm,
     extra=0

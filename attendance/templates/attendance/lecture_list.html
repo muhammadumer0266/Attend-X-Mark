@@ -5,68 +5,70 @@
 {% block content %}
 <div class="container">
   <div class="lecture-container">
-  <header class="lecture-header">
-    <h3>Lectures for {{ request.user.first_name|capfirst }} {{ request.user.last_name|capfirst }}</h3>
-  </header>
+    <header class="lecture-header">
+      <h3>Lectures for {{ request.user.first_name|capfirst }} {{ request.user.last_name|capfirst }}</h3>
+    </header>
 
-  <div class="table-wrapper">
-    <table class="lecture-table">
-      <thead>
-        <tr>
-          <th scope="col">Course</th>
-          <th scope="col">Class</th>
-          <th scope="col">Start Time</th>
-          <th scope="col">End Time</th>
-          <th scope="col">Days</th>
-          <th scope="col">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for lecture in lectures %}
-          <tr class="row-tb" style="--row-index: {{ forloop.counter0 }}">
-            <td data-label="Course">{{ lecture.course }}</td>
-            <td data-label="Class">{{ lecture.lecture_class }}</td>
-            <td data-label="Start Time">{{ lecture.start_time }}</td>
-            <td data-label="End Time">{{ lecture.end_time }}</td>
-            <td data-label="Days">{{ lecture.days_display }}</td>
-            <td data-label="Action">
-              {% if lecture.lecture_id %}
-                <div class="action-buttons">
-                  {% if lecture.has_attendance_record %}
-                    <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-warning btn-sm">
-                      <i class="fas fa-edit"></i> Edit Attendance
-                    </a>
-                    <a href="{% url 'add_makeup_class' lecture.lecture_id %}" class="btn btn-success btn-sm">
-                      <i class="fas fa-plus-circle"></i> Add Makeup Class
-                    </a>
-                  {% else %}
-                    <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-primary btn-sm">
-                      <i class="fas fa-check"></i> Mark Attendance
-                    </a>
-                  {% endif %}
-                  <!-- Updated Capture Face link with lecture_id -->
-                  <a href="{% url 'capture_face' lecture.lecture_id %}" class="btn btn-info btn-sm">
-                    <i class="fas fa-camera"></i> Capture Face
-                  </a>
-                  <!-- View Report link -->
-                  <a href="{% url 'student_attendance_report' lecture.lecture_id %}" class="btn btn-info btn-sm">
-                    <i class="fas fa-eye"></i> View Report
-                  </a>
-                </div>
-              {% else %}
-                <span class="text-muted">No ID</span>
-              {% endif %}
-            </td>
-          </tr>
-        {% empty %}
+    <div class="table-wrapper">
+      <table class="lecture-table">
+        <thead>
           <tr>
-            <td colspan="6" class="no-lectures">No lectures available this semester.</td>
+            <th scope="col">Course</th>
+            <th scope="col">Class</th>
+            <th scope="col">Start Time</th>
+            <th scope="col">End Time</th>
+            <th scope="col">Days</th>
+            <th scope="col">Action</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for lecture in lectures %}
+            <tr class="row-tb" style="--row-index: {{ forloop.counter0 }}">
+              <td data-label="Course">
+                <div class="course-content">
+                  {{ lecture.course }}
+                  {% if lecture.has_attendance_record %}
+                    <span class="attendance-marked" title="Attendance Marked for Today">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+              <td data-label="Class">{{ lecture.lecture_class }}</td>
+              <td data-label="Start Time">{{ lecture.start_time }}</td>
+              <td data-label="End Time">{{ lecture.end_time }}</td>
+              <td data-label="Days">{{ lecture.days_display }}</td>
+              <td data-label="Action">
+                {% if lecture.lecture_id %}
+                  <div class="action-buttons">
+                    {% if lecture.has_attendance_record %}
+                      <a href="{% url 'add_makeup_class' lecture.lecture_id %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus-circle"></i> Add Makeup Class
+                      </a>
+                    {% else %}
+                      <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-check"></i> Mark Attendance
+                      </a>
+                    {% endif %}
+                    <!-- Capture Face link -->
+                    <a href="{% url 'capture_face' lecture.lecture_id %}" class="btn btn-info btn-sm">
+                      <i class="fas fa-camera"></i> Capture Face
+                    </a>
+                  </div>
+                {% else %}
+                  <span class="text-muted">No ID</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="no-lectures">No lectures available this semester.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 </div>
 
 <style>
@@ -114,6 +116,24 @@
     color: #fff;
   }
 
+  /* Attendance marked icon */
+  .attendance-marked {
+    color: #28a745; /* Green color for "marked" status */
+    font-size: 1.2rem;
+    margin: 0 5px;
+    cursor: default;
+    display: inline-flex; /* Ensure icon aligns properly */
+    align-items: center;
+  }
+
+  .attendance-marked i {
+    transition: color 0.3s ease;
+  }
+
+  .attendance-marked:hover i {
+    color: #218838; /* Darker green on hover */
+  }
+
   /* Button styling */
   .btn {
     display: inline-block;
@@ -135,7 +155,6 @@
     background: #28a745;
   }
 
-  /* Added styling for btn-info */
   .btn-info {
     background: #17a2b8;
   }
@@ -166,6 +185,7 @@
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center; /* Center icons and buttons vertically */
   }
 
   .btn i {
@@ -204,6 +224,10 @@
 
     .action-buttons {
       gap: 8px;
+    }
+
+    .attendance-marked {
+      font-size: 1.1rem;
     }
   }
 
@@ -281,7 +305,29 @@
       flex: 0 0 40%; /* Fixed width for labels */
     }
 
-    /* Value styling */
+    /* Value styling with attendance icon */
+    .lecture-table td[data-label="Course"] {
+      flex-wrap: wrap;
+    }
+
+    .lecture-table td[data-label="Course"]:after {
+      content: "";
+      display: block;
+      width: 100%;
+    }
+
+    .lecture-table td[data-label="Course"] .course-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lecture-table td[data-label="Course"] .attendance-marked {
+      font-size: 1.1rem;
+      color: #28a745;
+      margin: 0;
+    }
+
     .lecture-table td:not([data-label="Action"]) {
       flex-wrap: wrap;
     }
@@ -299,6 +345,7 @@
     .action-buttons {
       flex-direction: column;
       gap: 8px;
+      align-items: stretch; /* Ensure buttons stretch to full width */
     }
 
     .btn {
@@ -320,7 +367,6 @@
       background: linear-gradient(45deg, #28a745, #218838);
     }
 
-    /* Added mobile styling for btn-info */
     .btn-info {
       background: linear-gradient(45deg, #17a2b8, #138496);
     }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0C4B33">
+  <meta name="theme-color" content=" #1d3557">
   <!-- HTML Meta Tags -->
   <title>Welcome to AttendXMark</title>
   <meta name="description" content="Smart Attendance Solution ">
@@ -133,7 +133,7 @@
     /* Navbar Styles */
     .navbar {
       padding: 1rem;
-      background: linear-gradient(45deg, #457b9d, #1d3557);
+      background:  #1d3557;
     }
 
     .navbar-brand {
@@ -144,7 +144,7 @@
     }
 
     .navbar-brand:hover {
-      color: #C9F0DD;
+      color: #E0EAF2;
     }
 
     .navbar-nav .nav-link {
@@ -156,14 +156,14 @@
     }
 
     .navbar-nav .nav-link:hover {
-      color: #C9F0DD;
+      color: #E0EAF2;
     }
 
     .navbar-nav .nav-link::after {
       content: "";
       width: 0%;
       height: 2px;
-      background: #C9F0DD;
+      background: #E0EAF2;
       position: absolute;
       bottom: 0;
       left: 0;
@@ -297,6 +297,11 @@
             </a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="{% url 'teacher_lectures_report' %}">
+              Reports
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="{% url 'leave_list' %}">
               Leaves
             </a>
@@ -304,7 +309,7 @@
           {% elif request.user.is_student %}
           <li class="nav-item">
             <a class="nav-link" href="{% url 'course_list' %}">
-              Courses
+              Lectures
             </a>
           </li>
           <li class="nav-item">

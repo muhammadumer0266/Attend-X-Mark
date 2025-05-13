@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Lecture Reports{% endblock %}
+{% block content %}
+<div class="report-page-container" style="background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
+    <div class="container py-5">
+        <!-- Header Section -->
+        <div class="text-center mb-5" style="padding: 20px; border-radius: 10px;">
+            <h1 class="display-5 fw-bold text-dark">
+                Lecture Reports for {{ user.first_name|capfirst }} {{ user.last_name|capfirst }}
+            </h1>
+            <p class="text-muted mt-2 fs-5">Explore attendance reports for your lectures.</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="row mb-5 justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="input-group shadow-sm report-search-group" style="border-radius: 25px; height: 60px; overflow: hidden;">
+                    <span class="input-group-text bg-white border-0" style="background: #ffffff;">
+                        <i class="fas fa-search report-search-icon" style="color: #457b9d;"></i>
+                    </span>
+                    <input type="text" id="reportSearchInput" class="form-control border-0 py-2" placeholder="Search by course, class, or days..." aria-label="Search lectures" style="background: #ffffff; font-size: 1rem; color: #333;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Lecture Cards -->
+        {% if lectures %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="reportLectureCards">
+                {% for lecture in lectures %}
+                    <div class="col report-lecture-card-wrapper" data-course="{{ lecture.course|lower }}" data-class="{{ lecture.lecture_class|lower }}" data-days="{{ lecture.days_display|lower }}">
+                        <a href="{% url 'student_attendance_report' lecture_id=lecture.lecture_id %}" class="text-decoration-none">
+                            <div class="card h-100 shadow-sm border-0 report-lecture-card" style="border-radius: 15px; background: #ffffff;">
+                                <div class="card-body d-flex flex-column p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <i class="fas fa-user-graduate fs-4" style="color: #457b9d; margin-right: 10px;"></i>
+                                        <h5 class="card-title mb-0 text-dark fw-bold text-truncate" style="max-width: 80%;">{{ lecture.course }}</h5>
+                                    </div>
+                                    <div class="card-text flex-grow-1" style="color: #555;">
+                                        <p class="mb-2">
+                                            <span class="fw-medium" style="color: #1d3557;">Class:</span> 
+                                            <span class="text-truncate d-inline-block" style="max-width: 100%;">{{ lecture.lecture_class }}</span>
+                                        </p>
+                                        <p class="mb-2">
+                                            <span class="fw-medium" style="color: #1d3557;">Time:</span> {{ lecture.start_time }} - {{ lecture.end_time }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <span class="fw-medium" style="color: #1d3557;">Days:</span> 
+                                            <span class="text-truncate d-inline-block" style="max-width: 100%;">{{ lecture.days_display }}</span>
+                                        </p>
+                                    </div>
+                                    <div class="mt-auto text-end pt-3">
+                                        <span class="btn btn-outline-primary rounded-pill report-view-report" style="background: #457b9d; color: #ffffff; border: none; padding: 5px 15px;">
+                                            <i class="fas fa-eye me-1"></i> View Report
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center bg-white rounded-lg shadow-lg p-5 report-no-lectures" style="border-radius: 15px;">
+                <p class="text-muted fs-5">No lectures available this semester.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* Scoped styles to avoid interference with base.html */
+    .report-page-container {
+        /* Background moved from body to container */
+        background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    /* Card styling */
+    .report-lecture-card {
+        min-height: 240px; /* Fixed height for uniformity */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .report-lecture-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Ensure text doesn't overflow */
+    .report-lecture-card .card-text p {
+        overflow-wrap: break-word;
+    }
+
+    /* Custom primary colors */
+    .report-lecture-card .text-primary,
+    .report-view-report,
+    .report-search-icon {
+        color: #457b9d !important;
+    }
+
+    .report-view-report {
+        background-color: #457b9d !important;
+        color: #ffffff !important;
+        border-color: #457b9d !important;
+    }
+
+    .report-view-report:hover {
+        background-color: #1d3557 !important;
+        color: #ffffff !important;
+        border-color: #1d3557 !important;
+    }
+
+    /* Search bar styling */
+    .report-search-group {
+        background: #ffffff;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .report-search-group:hover,
+    .report-search-group:focus-within {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .report-search-group .form-control {
+        border-radius: 0 25px 25px 0;
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .report-search-group .form-control::placeholder {
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    /* Smooth scroll behavior */
+    .report-page-container {
+        scroll-behavior: smooth;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .report-page-container .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .report-lecture-card {
+            min-height: 220px; /* Slightly smaller for mobile */
+        }
+        .report-search-group .form-control {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>
+
+<script>
+    // Search functionality with scoped variable names
+    (function() {
+        const searchInput = document.getElementById('reportSearchInput');
+        const lectureCardsContainer = document.getElementById('reportLectureCards');
+
+        if (searchInput && lectureCardsContainer) {
+            searchInput.addEventListener('input', function(e) {
+                const searchText = e.target.value.toLowerCase();
+                const cards = lectureCardsContainer.querySelectorAll('.report-lecture-card-wrapper');
+
+                cards.forEach(card => {
+                    const course = card.getAttribute('data-course');
+                    const lectureClass = card.getAttribute('data-class');
+                    const days = card.getAttribute('data-days');
+
+                    if (course.includes(searchText) || lectureClass.includes(searchText) || days.includes(searchText)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+    })();
+</script>
+{% endblock %}

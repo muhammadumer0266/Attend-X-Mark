@@ -1,40 +1,20 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
 from django.utils import timezone
-from django.conf import settings
 
-from .models import AttendanceRecord, Attendance, Lecture, Leave, Day
+from .models import AttendanceRecord, Attendance, Lecture, Leave
 from .forms import AttendanceFormSet, LeaveForm
 
-from accounts.models import Student, CustomUser
-from subjects.models import Class
+from accounts.models import CustomUser
 
 import base64
-import json
-import os
 import io
 import torch
 import pickle
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy.spatial.distance import cosine
 from facenet_pytorch import MTCNN, InceptionResnetV1
-
-# ReportLab for PDF generation
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-
-# OpenPyXL for Excel generation
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
 
 
 mtcnn = MTCNN(image_size=160, margin=0, min_face_size=20, keep_all=True)
@@ -81,8 +61,6 @@ def leave_decline(request, leave_id):
     leave.save()
     messages.success(request, f"Leave request for {leave.user} declined.")
     return redirect('leave_list')
-
-
 
 @login_required
 def lecture_list(request, lecture_id=None):
@@ -173,218 +151,6 @@ def add_makeup_class(request, lecture_id):
 
 def attendance_success(request):
     return render(request, 'attendance/success.html', {'message': 'Attendance marked successfully!'})
-
-
-@login_required
-def student_attendance_report(request, lecture_id):
-    if not request.user.is_teacher:
-        return render(request, 'attendance/access_denied.html', status=403)
-
-    lecture = get_object_or_404(Lecture, pk=lecture_id)
-    teacher = lecture.teacher  # Assuming the Lecture model has a teacher field
-    students = lecture.lecture_class.students.all().order_by('roll_no')
-    attendance_records = AttendanceRecord.objects.filter(lecture=lecture).order_by('date')
-    dates = [record.date for record in attendance_records]
-
-    # Prepare data for the table
-    student_data = []
-    for student in students:
-        student_attendance = []
-        total_days = len(attendance_records)
-        present_days = 0
-
-        for record in attendance_records:
-            attendance = Attendance.objects.filter(
-                attendance_record=record, student=student
-            ).first()
-            status = attendance.attendance_status if attendance else 'absent'
-            student_attendance.append(status)
-            if status == 'present':
-                present_days += 1
-
-        percentage = (present_days / total_days * 100) if total_days > 0 else 0
-        student_data.append({
-            'roll_no': student.roll_no,
-            'name': student.first_name + ' ' + student.last_name,
-            'attendance': student_attendance,
-            'percentage': round(percentage)
-        })
-
-    # Handle PDF download
-    if 'download_pdf' in request.GET:
-        buffer = io.BytesIO()
-        # Set page to landscape with formal margins (1 inch on all sides)
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=landscape(A4),
-            topMargin=1*inch,
-            bottomMargin=1*inch,
-            leftMargin=1*inch,
-            rightMargin=1*inch
-        )
-        elements = []
-
-        # Custom styles
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle(
-            'TitleStyle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            leading=22,
-            textColor=colors.HexColor('#1E3A8A'),  # Dark blue
-            spaceAfter=12,
-            alignment=1  # Center
-        )
-        subtitle_style = ParagraphStyle(
-            'SubtitleStyle',
-            parent=styles['Normal'],
-            fontSize=12,
-            leading=14,
-            textColor=colors.HexColor('#4B5563'),  # Gray
-            spaceAfter=10,
-            alignment=1  # Center
-        )
-        header_left_style = ParagraphStyle(
-            'HeaderLeftStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            leading=12,
-            textColor=colors.HexColor('#4B5563'),  # Gray
-            alignment=0  # Left
-        )
-        header_right_style = ParagraphStyle(
-            'HeaderRightStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            leading=12,
-            textColor=colors.HexColor('#4B5563'),  # Gray
-            alignment=2  # Right
-        )
-
-        # Header: Generated by on the left, Generated on on the right
-        elements.append(Paragraph(
-            f"Generated by: {teacher.first_name} {teacher.last_name}",
-            header_left_style
-        ))
-        elements.append(Paragraph(
-            f"Generated on: {timezone.now().strftime('%d/%m/%Y')}",
-            header_right_style
-        ))
-        elements.append(Spacer(1, 0.1*inch))  # Small space after header
-        # Centered title and lecture/class info
-        elements.append(Paragraph(f"Attendance Report", title_style))
-        elements.append(Paragraph(
-            f"Lecture: {lecture} | Class: {lecture.lecture_class}",
-            subtitle_style
-        ))
-
-        # Prepare table data
-        table_data = [['Roll No', 'Student'] + [date.strftime('%d/%m/%Y') for date in dates] + ['Percentage']]
-        for student in student_data:
-            row = [student['roll_no'], student['name']] + student['attendance'] + [f"{student['percentage']}%"]
-            table_data.append(row)
-
-        # Create table with adjusted column widths for landscape
-        col_widths = [0.8*inch, 2.5*inch] + [0.9*inch]*len(dates) + [1*inch]
-        table = Table(table_data, colWidths=col_widths)
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A8A')),  # Dark blue header
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('TOPPADDING', (0, 0), (-1, 0), 10),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#F3F4F6'), colors.white]),  # Alternating row colors
-        ]))
-        elements.append(table)
-
-        # Footer function for page numbers and note
-        def add_page_number(canvas, doc):
-            page_num = canvas.getPageNumber()
-            # Page number
-            canvas.setFont("Helvetica", 9)
-            canvas.setFillColor(colors.grey)
-            canvas.drawCentredString(landscape(A4)[0]/2, 0.5*inch, f"Page {page_num}")
-
-            # System-generated note
-            canvas.setFont("Helvetica-Oblique", 8)
-            canvas.setFillColor(colors.grey)
-            canvas.drawCentredString(landscape(A4)[0]/2, 0.35*inch, "This is a system-generated report.")
-
-            # Add watermark
-            canvas.saveState()
-            canvas.setFont("Helvetica-Bold", 60)
-            canvas.setFillColor(colors.grey, alpha=0.1)  # Low opacity
-            canvas.rotate(45)
-            canvas.drawCentredString(5*inch, -1*inch, "AttendXMark")  # Adjusted position for landscape
-            canvas.restoreState()
-
-        # Build PDF with footer
-        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/pdf')
-        # File name: lecture_class.name - current_date
-        current_date = "20/04/2025"  # As per the specified current date
-        file_name = f"{lecture.lecture_class} - {current_date.replace('/', '-')}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        return response
-
-    # Handle Excel download
-    if 'download_excel' in request.GET:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Attendance Report"
-
-        # Add headers
-        headers = ['Roll No', 'Student'] + [date.strftime('%d/%m/%Y') for date in dates] + ['Percentage']
-        ws.append(headers)
-
-        # Style headers
-        for cell in ws[1]:
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal='center')
-
-        # Add data
-        for student in student_data:
-            row = [student['roll_no'], student['name']] + student['attendance'] + [f"{student['percentage']}%"]
-            ws.append(row)
-
-        # Adjust column widths
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column].width = adjusted_width
-
-        # Create response
-        buffer = io.BytesIO()
-        wb.save(buffer)
-        buffer.seek(0)
-        response = HttpResponse(
-            buffer,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        # File name: lecture_class - current_date (same as PDF)
-        current_date = "20/04/2025"  # As per the specified current date
-        file_name = f"{lecture.lecture_class} - {current_date.replace('/', '-')}.xlsx"
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        return response
-
-    context = {
-        'lecture': lecture,
-        'dates': dates,
-        'student_data': student_data,
-    }
-    return render(request, 'attendance/student_attendance_report.html', context)
 
 @login_required
 def capture_face(request, lecture_id):
@@ -537,3 +303,49 @@ def capture_success(request):
         'lecture': lecture,
     }
     return render(request, 'attendance/capture_success.html', context)
+
+@login_required
+def edit_attendance(request, lecture_id, attendance_record_id):
+    lecture = get_object_or_404(Lecture, pk=lecture_id)
+    if not request.user.is_teacher or lecture.teacher != request.user:
+        return render(request, 'attendance/access_denied.html', status=403)
+
+    # Get the attendance record using the ID
+    record = get_object_or_404(AttendanceRecord, id=attendance_record_id, lecture=lecture)
+    record_date = record.date  # For display purposes
+
+    # Get all students in the lecture's class
+    students = lecture.lecture_class.students.all().order_by('roll_no')
+
+    if request.method == 'POST':
+        formset = AttendanceFormSet(request.POST, queryset=Attendance.objects.filter(attendance_record=record))
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.attendance_record = record
+                instance.save()
+            messages.success(request, "Attendance updated successfully.")
+            return redirect('student_attendance_report', lecture_id=lecture_id)
+        else:
+            messages.error(request, "Please correct the errors below.")
+            for form in formset:
+                if form.errors:
+                    print(form.errors)  # Debug: Print errors to console
+    else:
+        # Ensure attendance records exist for all students
+        existing_attendance = Attendance.objects.filter(attendance_record=record)
+        if not existing_attendance.exists():
+            for student in students:
+                Attendance.objects.get_or_create(
+                    attendance_record=record,
+                    student=student,
+                    defaults={'attendance_status': 'absent'}
+                )
+        formset = AttendanceFormSet(queryset=Attendance.objects.filter(attendance_record=record))
+
+    return render(request, 'attendance/edit_attendance.html', {
+        'formset': formset,
+        'lecture': lecture,
+        'date': record_date,
+        'record': record,
+    })

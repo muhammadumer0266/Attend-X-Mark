@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Edit Attendance - {{ lecture }} - {{ date }}{% endblock %}
+{% block content %}
+<div class="edit-attendance-container" style="background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
+    <div class="container py-5">
+        <!-- Header Section -->
+        <div class="text-center mb-5" style="background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+            <h1 class="display-5 fw-bold text-dark">
+                Edit Attendance for {{ lecture }}
+            </h1>
+            <p class="text-muted mt-2 fs-5">Date: {{ date|date:"d/m/Y" }}</p>
+        </div>
+
+        <!-- Form Section -->
+        <div class="bg-white shadow-lg rounded-lg p-5">
+            <form method="post" class="edit-attendance-form">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-dark" style="background: #1d3557; color: #ffffff;">
+                            <tr>
+                                <th class="py-3 px-4 text-center">Roll No</th>
+                                <th class="py-3 px-4 text-center">Student</th>
+                                <th class="py-3 px-4 text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                                <tr>
+                                    <td class="py-3 px-4 text-center align-middle">
+                                        {{ form.instance.student.roll_no }}
+                                        {{ form.id }} <!-- Include the hidden id field -->
+                                    </td>
+                                    <td class="py-3 px-4 text-center align-middle">
+                                        {{ form.instance.student.first_name }} {{ form.instance.student.last_name }}
+                                    </td>
+                                    <td class="py-3 px-4 text-center align-middle">
+                                        <div class="d-flex justify-content-center">
+                                            {{ form.attendance_status }}
+                                        </div>
+                                        {% if form.errors %}
+                                            <div class="text-danger mt-2">
+                                                {{ form.errors }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-2" style="background: #457b9d; border: none;">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                    <a href="{% url 'student_attendance_report' lecture_id=lecture.lecture_id %}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ms-3">
+                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Scoped styles for the edit page */
+    .edit-attendance-container {
+        scroll-behavior: smooth;
+    }
+
+    .edit-attendance-form .form-check-input {
+        margin-right: 8px;
+    }
+
+    .edit-attendance-form .form-check-label {
+        font-size: 1rem;
+        color: #333;
+    }
+
+    /* Hover effect for table rows */
+    .table-hover tbody tr:hover {
+        background-color: #f5f7fa;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .edit-attendance-container .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .edit-attendance-form .btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .edit-attendance-form .btn.ms-3 {
+            margin-left: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

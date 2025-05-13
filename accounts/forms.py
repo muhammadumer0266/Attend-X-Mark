@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from phonenumber_field.formfields import PhoneNumberField
 from .models import CustomUser, Teacher, Student
-from subjects.models import Department, DegreeLevel, Discipline, Semester
+from subjects.models import Department, DegreeLevel, Discipline, Semester, Shift, Section
 from django_recaptcha.fields import ReCaptchaField
 
 class UserDetailsForm(forms.ModelForm):
@@ -141,7 +141,7 @@ class StudentAdditionalInfoForm(forms.ModelForm):
 
     class Meta:
         model = Student
-        fields = ['profile_picture', 'email', 'roll_no', 'degree_level', 'discipline', 'semester', 'contact_number', 'section']
+        fields = ['profile_picture', 'email', 'contact_number', 'roll_no', 'degree_level', 'discipline', 'semester', 'shift', 'section']
         widgets = {
             'roll_no': forms.TextInput(
                 attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter roll number'}
@@ -150,6 +150,7 @@ class StudentAdditionalInfoForm(forms.ModelForm):
             'section': forms.Select(attrs={'class': 'personal-info-select'}),
             'discipline': forms.Select(attrs={'class': 'personal-info-select'}),
             'semester': forms.Select(attrs={'class': 'personal-info-select'}),
+            'shift': forms.Select(attrs={'class': 'personal-info-select'}),
         }
 
     # Validation for roll number
@@ -171,3 +172,4 @@ class StudentAdditionalInfoForm(forms.ModelForm):
         self.fields['degree_level'].queryset = DegreeLevel.objects.all()
         self.fields['discipline'].queryset = Discipline.objects.all()
         self.fields['semester'].queryset = Semester.objects.all()
+        self.fields['shift'].queryset = Shift.objects.all()

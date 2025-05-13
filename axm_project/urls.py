@@ -33,5 +33,6 @@ urlpatterns = [
     # Other apps
     path('subjects/', include('subjects.urls')),
     path('attendance/', include('attendance.urls')),
+    path('report/', include('reports.urls')),
     
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

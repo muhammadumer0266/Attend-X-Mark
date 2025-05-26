@@ -28,7 +28,12 @@
                 <div class="course-content">
                   {{ lecture.course }}
                   {% if lecture.has_attendance_record %}
-                    <span class="attendance-marked" title="Attendance Marked for Today">
+                    <span class="attendance-marked attendance-regular" title="Regular Attendance Marked for Today">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  {% endif %}
+                  {% if lecture.has_makeup_class_record %}
+                    <span class="attendance-marked attendance-makeup" title="Makeup Class Marked for Today">
                       <i class="fas fa-check-circle"></i>
                     </span>
                   {% endif %}
@@ -41,19 +46,17 @@
               <td data-label="Action">
                 {% if lecture.lecture_id %}
                   <div class="action-buttons">
-                    {% if lecture.has_attendance_record %}
+                    {% if lecture.has_attendance_record and lecture.has_makeup_class_record %}
+                      <span class="text-muted">No actions available</span>
+                    {% elif lecture.has_attendance_record %}
                       <a href="{% url 'add_makeup_class' lecture.lecture_id %}" class="btn btn-success btn-sm">
                         <i class="fas fa-plus-circle"></i> Add Makeup Class
                       </a>
                     {% else %}
-                      <a href="{% url 'mark_attendance' lecture.lecture_id %}" class="btn btn-primary btn-sm">
+                      <a href="{% url 'capture_face' lecture.lecture_id %}" class="btn btn-primary btn-sm">
                         <i class="fas fa-check"></i> Mark Attendance
                       </a>
                     {% endif %}
-                    <!-- Capture Face link -->
-                    <a href="{% url 'capture_face' lecture.lecture_id %}" class="btn btn-info btn-sm">
-                      <i class="fas fa-camera"></i> Capture Face
-                    </a>
                   </div>
                 {% else %}
                   <span class="text-muted">No ID</span>
@@ -72,14 +75,11 @@
 </div>
 
 <style>
-  /* Base container styling */
   .lecture-container {
     padding: 20px;
     max-width: 100%;
     margin: 0 auto;
   }
-
-  /* Header styling */
   .lecture-header {
     background: linear-gradient(45deg, #457b9d, #1d3557);
     color: #fff;
@@ -87,22 +87,17 @@
     padding: 20px;
     border-radius: 10px 10px 0 0;
   }
-
-  /* Table wrapper for horizontal scrolling on small screens */
   .table-wrapper {
     overflow-x: auto;
     background: #fff;
     border-radius: 0 0 10px 10px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }
-
-  /* Table styling */
   .lecture-table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
   }
-
   .lecture-table th,
   .lecture-table td {
     padding: 10px;
@@ -110,31 +105,32 @@
     border: 1px solid #e9ecef;
     min-width: 100px;
   }
-
   .lecture-table th {
     background: #457b9d;
     color: #fff;
   }
-
-  /* Attendance marked icon */
   .attendance-marked {
-    color: #28a745; /* Green color for "marked" status */
     font-size: 1.2rem;
     margin: 0 5px;
     cursor: default;
-    display: inline-flex; /* Ensure icon aligns properly */
+    display: inline-flex;
     align-items: center;
   }
-
+  .attendance-regular {
+    color: #007bff; /* Blue for regular attendance */
+  }
+  .attendance-makeup {
+    color: #28a745; /* Green for makeup class */
+  }
   .attendance-marked i {
     transition: color 0.3s ease;
   }
-
-  .attendance-marked:hover i {
+  .attendance-regular:hover i {
+    color: #0056b3; /* Darker blue on hover */
+  }
+  .attendance-makeup:hover i {
     color: #218838; /* Darker green on hover */
   }
-
-  /* Button styling */
   .btn {
     display: inline-block;
     background: #457b9d;
@@ -146,123 +142,95 @@
     transition: background 0.3s ease;
     margin: 2px;
   }
-
   .btn-warning {
     background: #f0ad4e;
   }
-
   .btn-success {
     background: #28a745;
   }
-
   .btn-info {
     background: #17a2b8;
   }
-
   .btn:hover {
     background: #1d3557;
     color: wheat;
   }
-
   .btn-warning:hover {
     background: #ec971f;
     color: wheat;
   }
-
   .btn-success:hover {
     background: #218838;
     color: wheat;
   }
-
   .btn-info:hover {
     background: #138496;
     color: wheat;
   }
-
-  /* Action buttons container */
   .action-buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
-    align-items: center; /* Center icons and buttons vertically */
+    align-items: center;
   }
-
   .btn i {
     margin-right: 5px;
   }
-
-  /* No lectures message */
   .no-lectures {
     text-align: center;
     color: #dc3545;
     font-weight: 600;
     padding: 20px;
   }
-
-  /* Tablet adjustments */
   @media (max-width: 768px) {
     .lecture-container {
       padding: 10px;
     }
-
     .lecture-header {
       padding: 15px;
     }
-
     .lecture-table th,
     .lecture-table td {
       padding: 8px;
       font-size: 14px;
       min-width: 80px;
     }
-
     .btn {
       padding: 4px 8px;
       font-size: 14px;
     }
-
     .action-buttons {
       gap: 8px;
     }
-
     .attendance-marked {
       font-size: 1.1rem;
     }
   }
-
-  /* Mobile view (modern card layout) */
   @media (max-width: 480px) {
     .lecture-container {
       padding: 10px;
     }
-
     .lecture-header {
       padding: 15px;
       font-size: 1.2rem;
     }
-
     .table-wrapper {
-      overflow-x: hidden; /* Disable horizontal scroll for card layout */
+      overflow-x: hidden;
       padding: 10px 0;
-      box-shadow: none; /* Remove shadow since cards have their own */
+      box-shadow: none;
     }
-
     .lecture-table {
       display: block;
-      background: transparent; /* Remove table background for cards */
+      background: transparent;
     }
-
     .lecture-table thead {
-      display: none; /* Hide header on mobile */
+      display: none;
     }
-
     .lecture-table tbody,
     .lecture-table tr {
       display: block;
     }
-
-    /* Card styling for each lecture */
     .lecture-table tr {
       margin: 15px 10px;
       border: none;
@@ -273,8 +241,6 @@
                   -5px -5px 15px rgba(255, 255, 255, 0.7);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-
-    /* Hover/tap effect for cards */
     .lecture-table tr:hover,
     .lecture-table tr:active {
       transform: translateY(-3px);
@@ -282,7 +248,6 @@
                   -7px -7px 20px rgba(255, 255, 255, 0.9);
       background: linear-gradient(145deg, #f0f0f0, #d9d9d9);
     }
-
     .lecture-table td {
       display: flex;
       justify-content: space-between;
@@ -295,59 +260,45 @@
       font-size: 14px;
       color: #333;
     }
-
-    /* Label styling for each field */
     .lecture-table td:before {
       content: attr(data-label);
       font-weight: 600;
       color: #1d3557;
       margin-right: 10px;
-      flex: 0 0 40%; /* Fixed width for labels */
+      flex: 0 0 40%;
     }
-
-    /* Value styling with attendance icon */
     .lecture-table td[data-label="Course"] {
       flex-wrap: wrap;
     }
-
     .lecture-table td[data-label="Course"]:after {
       content: "";
       display: block;
       width: 100%;
     }
-
     .lecture-table td[data-label="Course"] .course-content {
       display: flex;
       align-items: center;
       gap: 8px;
     }
-
     .lecture-table td[data-label="Course"] .attendance-marked {
       font-size: 1.1rem;
-      color: #28a745;
       margin: 0;
     }
-
     .lecture-table td:not([data-label="Action"]) {
       flex-wrap: wrap;
     }
-
     .lecture-table td:last-child {
       border-bottom: none;
     }
-
-    /* Action button styling */
     .lecture-table td[data-label="Action"] {
       justify-content: center;
       padding: 15px;
     }
-
     .action-buttons {
       flex-direction: column;
       gap: 8px;
-      align-items: stretch; /* Ensure buttons stretch to full width */
+      align-items: stretch;
     }
-
     .btn {
       background: linear-gradient(45deg, #457b9d, #1d3557);
       padding: 8px 15px;
@@ -358,41 +309,33 @@
       width: 100%;
       text-align: center;
     }
-
     .btn-warning {
       background: linear-gradient(45deg, #f0ad4e, #ec971f);
     }
-
     .btn-success {
       background: linear-gradient(45deg, #28a745, #218838);
     }
-
     .btn-info {
       background: linear-gradient(45deg, #17a2b8, #138496);
     }
-
     .btn:hover,
     .btn:active {
       transform: scale(1.05);
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       background: linear-gradient(45deg, #1d3557, #457b9d);
     }
-
     .btn-warning:hover,
     .btn-warning:active {
       background: linear-gradient(45deg, #ec971f, #f0ad4e);
     }
-
     .btn-success:hover,
     .btn-success:active {
       background: linear-gradient(45deg, #218838, #28a745);
     }
-
     .btn-info:hover,
     .btn-info:active {
       background: linear-gradient(45deg, #138496, #17a2b8);
     }
-
     .no-lectures {
       font-size: 14px;
       padding: 20px;

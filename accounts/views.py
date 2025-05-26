@@ -29,7 +29,6 @@ from attendance.models import Leave,AttendanceRecord
 def home(request):
     return render(request, 'accounts/home.html')
 
-
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)

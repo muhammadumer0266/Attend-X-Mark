@@ -1,101 +1,251 @@
 {% extends 'base.html' %}
 {% block title %}Edit Attendance - {{ lecture }} - {{ date }}{% endblock %}
 {% block content %}
-<div class="edit-attendance-container" style="background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%); min-height: 100vh; padding: 20px;">
-    <div class="container py-5">
-        <!-- Header Section -->
-        <div class="text-center mb-5" style="background: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-            <h1 class="display-5 fw-bold text-dark">
-                Edit Attendance for {{ lecture }}
-            </h1>
-            <p class="text-muted mt-2 fs-5">Date: {{ date|date:"d/m/Y" }}</p>
-        </div>
-
-        <!-- Form Section -->
-        <div class="bg-white shadow-lg rounded-lg p-5">
-            <form method="post" class="edit-attendance-form">
-                {% csrf_token %}
-                {{ formset.management_form }}
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover">
-                        <thead class="table-dark" style="background: #1d3557; color: #ffffff;">
-                            <tr>
-                                <th class="py-3 px-4 text-center">Roll No</th>
-                                <th class="py-3 px-4 text-center">Student</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for form in formset %}
-                                <tr>
-                                    <td class="py-3 px-4 text-center align-middle">
-                                        {{ form.instance.student.roll_no }}
-                                        {{ form.id }} <!-- Include the hidden id field -->
-                                    </td>
-                                    <td class="py-3 px-4 text-center align-middle">
-                                        {{ form.instance.student.first_name }} {{ form.instance.student.last_name }}
-                                    </td>
-                                    <td class="py-3 px-4 text-center align-middle">
-                                        <div class="d-flex justify-content-center">
-                                            {{ form.attendance_status }}
-                                        </div>
-                                        {% if form.errors %}
-                                            <div class="text-danger mt-2">
-                                                {{ form.errors }}
-                                            </div>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-2" style="background: #457b9d; border: none;">
-                        <i class="fas fa-save me-2"></i>Save Changes
-                    </button>
-                    <a href="{% url 'student_attendance_report' lecture_id=lecture.lecture_id %}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ms-3">
-                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <style>
-    /* Scoped styles for the edit page */
-    .edit-attendance-container {
-        scroll-behavior: smooth;
+    /* General form styling */
+    .attendance-form {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1.5rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .edit-attendance-form .form-check-input {
-        margin-right: 8px;
-    }
-
-    .edit-attendance-form .form-check-label {
-        font-size: 1rem;
+    /* Heading styling */
+    .attendance-form h2 {
+        text-align: center;
         color: #333;
+        margin-bottom: 1.5rem;
+        font-size: 1.8rem;
+        font-weight: 600;
     }
 
-    /* Hover effect for table rows */
-    .table-hover tbody tr:hover {
-        background-color: #f5f7fa;
+    /* Table styling */
+    .attendance-form table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 576px) {
-        .edit-attendance-container .container {
-            padding-left: 15px;
-            padding-right: 15px;
+    .attendance-form th,
+    .attendance-form td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .attendance-form th {
+        background-color: #f5f5f5;
+        color: #333;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+    }
+
+    .attendance-form td {
+        color: #555;
+        font-size: 1rem;
+    }
+
+    /* Zebra striping for rows */
+    .attendance-form tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    /* Hover effect for rows */
+    .attendance-form tr:hover {
+        background-color: #f0f0f0;
+    }
+
+    /* Button styling */
+    .attendance-form button,
+    .attendance-form a.btn {
+        display: inline-block;
+        width: 200px;
+        padding: 0.75rem;
+        margin: 0.5rem;
+        text-align: center;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        text-decoration: none;
+    }
+
+    .attendance-form button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+    }
+
+    .attendance-form button:hover {
+        background-color: #0056b3;
+    }
+
+    .attendance-form button:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    }
+
+    .attendance-form a.btn {
+        background-color: #6c757d;
+        color: #fff;
+        border: none;
+    }
+
+    .attendance-form a.btn:hover {
+        background-color: #5a6268;
+    }
+
+    /* Custom radio button styling */
+    .radio-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .radio-label {
+        display: inline-block;
+        position: relative;
+        padding: 0.5rem 1.5rem;
+        background-color: #f1f3f5;
+        border: 1px solid #e0e0e0;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        color: #333;
+        transition: all 0.3s ease;
+        user-select: none;
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .radio-label:hover {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+
+    /* Hide the actual radio input */
+    input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    /* Style for checked state */
+    input[type="radio"]:checked + .radio-label {
+        background-color: #007bff;
+        color: #fff;
+        border-color: #007bff;
+        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    }
+
+    /* Different colors for different statuses */
+    input[value="present"]:checked + .radio-label {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    input[value="absent"]:checked + .radio-label {
+        background-color: #dc3518;
+        border-color: #dc3518;
+    }
+
+    input[value="leave"]:checked + .radio-label {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: #fff;
+    }
+
+    /* Focus state for accessibility */
+    input[type="radio"]:focus + .radio-label {
+        outline: 2px solid #007bff;
+        outline-offset: 2px;
+    }
+
+    /* Error messages */
+    .error-message {
+        color: #dc3545;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Responsive design */
+    @media (max-width: 600px) {
+        .attendance-form {
+            padding: 1rem;
         }
-        .edit-attendance-form .btn {
+
+        .attendance-form h2 {
+            font-size: 1.5rem;
+        }
+
+        .attendance-form th,
+        .attendance-form td {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .radio-label {
+            padding: 0.4rem 1.2rem;
+            font-size: 0.8rem;
+            min-width: 70px;
+        }
+
+        .attendance-form button,
+        .attendance-form a.btn {
             width: 100%;
-            margin-bottom: 10px;
-        }
-        .edit-attendance-form .btn.ms-3 {
-            margin-left: 0 !important;
+            padding: 0.6rem;
+            font-size: 0.9rem;
         }
     }
 </style>
+
+<div class="attendance-form">
+    <h2>Edit Attendance for {{ lecture }} on {{ date|date:"d/m/Y" }}</h2>
+
+    <form method="post" class="attendance-form">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        <table>
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Student</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form in formset %}
+                    <tr>
+                        <td>{{ form.instance.student.roll_no }}</td>
+                        <td>{{ form.instance.student.first_name }} {{ form.instance.student.last_name }}</td>
+                        <td>
+                            <div class="radio-group">
+                                {% for radio in form.attendance_status %}
+                                    {{ radio.tag }}
+                                    <label class="radio-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                {% endfor %}
+                            </div>
+                            {% if form.errors %}
+                                <div class="error-message">
+                                    {{ form.errors }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        {{ form.student }}
+                        {{ form.id }}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="text-align: center;">
+            <button type="submit">Save Changes</button>
+            <a href="{% url 'student_attendance_report' lecture_id=lecture.lecture_id %}" class="btn">Cancel</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

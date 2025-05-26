@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    /* Custom styles for modern UI (unchanged) */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -42,10 +41,9 @@
             Face Recognition Results for {{ lecture.course|default:'Unknown Lecture' }}
         </h2>
         <p class="text-center text-muted mb-5" style="font-family: 'Montserrat', sans-serif;">
-            Class: {{ lecture.lecture_class|default:'Unknown Class' }}
+            Class: {{ lecture.lecture_class|default:'Unknown Class' }}{% if is_makeup_class %} (Makeup Class){% endif %}
         </p>
 
-        <!-- Messages -->
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -55,7 +53,6 @@
             {% endfor %}
         {% endif %}
 
-        <!-- Annotated Image -->
         {% if annotated_image %}
             <div class="d-flex justify-content-center mb-5">
                 <img src="data:image/jpeg;base64,{{ annotated_image }}" alt="Annotated Image" class="img-fluid rounded shadow-sm" style="max-height: 500px;">
@@ -64,7 +61,6 @@
             <p class="text-center text-muted mb-5" style="font-family: 'Montserrat', sans-serif;">No image available.</p>
         {% endif %}
 
-        <!-- Recognized Users List -->
         <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
             Recognized Students
         </h3>
@@ -85,13 +81,11 @@
             <p class="text-center text-muted" style="font-family: 'Montserrat', sans-serif;">No students recognized in the image.</p>
         {% endif %}
 
-        <!-- Navigation Buttons -->
         <div class="d-flex justify-content-center mt-5 gap-3">
             {% with lecture_id=lecture.lecture_id|default:0 %}
-                <a href="{% url 'capture_face' lecture_id %}" class="btn btn-custom px-5 py-2 fs-5">Capture Another Image</a>
                 <a href="{% url 'mark_attendance' lecture_id %}" class="btn btn-custom px-5 py-2 fs-5">Review Attendance</a>
+                <a href="{% url 'lecture_list' %}" class="btn btn-custom px-5 py-2 fs-5">Back to Lectures</a>
             {% endwith %}
-            <a href="{% url 'lecture_list' %}" class="btn btn-custom px-5 py-2 fs-5">Back to Lectures</a>
         </div>
     </div>
 </div>

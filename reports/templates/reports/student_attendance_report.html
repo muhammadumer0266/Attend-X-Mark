@@ -23,14 +23,18 @@
                         <thead class="table-dark" style="background: #1d3557; color: #ffffff;">
                             <tr>
                                 <th class="text-left sticky-col" style="background: #1d3557; color: #ffffff; position: sticky; left: 0; z-index: 10;">Roll No</th>
-                                <th class="text-left">Student</th>
+                                <th class="text-center" style="vertical-align: middle;">Student</th>
                                 {% for record in record_data %}
                                     <th class="text-center">
                                         <div class="d-flex flex-column align-items-center">
                                             <span>{{ record.date|date:"d/m/Y" }}</span>
-                                            <a href="{% url 'edit_attendance' lecture_id=lecture.lecture_id attendance_record_id=record.id %}" class="btn btn-sm btn-outline-primary rounded-pill mt-1 edit-btn" style="background: #457b9d; color: #ffffff; border: none;">
-                                                <i class="fas fa-edit me-1"></i>Edit
-                                            </a>
+                                            <div class="d-flex gap-3 mt-1">
+                                                <a href="{% url 'edit_attendance' lecture_id=lecture.lecture_id attendance_record_id=record.id %}" class="btn btn-sm btn-outline-primary rounded-pill edit-btn" style="background: #457b9d; color: #ffffff; border: none;">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'delete_attendance' lecture_id=lecture.lecture_id attendance_record_id=record.id %}" class="btn btn-sm btn-outline-danger rounded-pill delete-btn" style="background: #dc3545; color: #ffffff; border: none;" onclick="return confirm('Are you sure you want to delete the attendance record for {{ record.date|date:'d/m/Y' }}?');">
+                                                    <i class="fas fa-trash"></i></a>
+                                            </div>
                                         </div>
                                     </th>
                                 {% endfor %}
@@ -69,10 +73,16 @@
     /* Table cell padding reduced by 5px more */
     .report-table th, .report-table td {
         padding: 7px 11px; /* Reduced from 12px 16px (py-3 px-4) to 7px 11px */
+        vertical-align: middle; /* Ensure vertical centering */
     }
 
-    /* Edit button padding */
-    .edit-btn {
+    /* Specific styling for the "Student" header */
+    .report-table th.text-center {
+        text-align: center; /* Ensure horizontal centering */
+    }
+
+    /* Edit and Delete button padding */
+    .edit-btn, .delete-btn {
         padding: 2px 8px;
         font-size: 0.8rem;
     }
@@ -89,7 +99,7 @@
         color: #333;
     }
 
-    /* Hover effect should not override sticky column background */
+  /* Hover effect should not override sticky column background */
     .table-hover tbody tr:hover .sticky-col.bg-white {
         background: #ffffff;
     }
@@ -127,8 +137,8 @@
             font-size: 0.85rem; /* Reduced from 0.9rem (14.4px) to 0.85rem (13.6px) */
         }
 
-        /* Adjust edit button for mobile */
-        .edit-btn {
+        /* Adjust edit and delete buttons for mobile */
+        .edit-btn, .delete-btn {
             padding: 1px 6px;
             font-size: 0.7rem; /* Reduced from 0.8rem (12.8px) to 0.7rem (11.2px) */
         }
@@ -145,9 +155,14 @@
             font-size: 0.9rem;
         }
 
-        /* Ensure date and edit button are compact */
+        /* Ensure date and buttons are compact */
         .d-flex.flex-column.align-items-center {
             gap: 2px;
+        }
+
+        /* Adjust gap between edit and delete buttons */
+        .d-flex.gap-1 {
+            gap: 4px;
         }
 
         /* Sticky column on mobile */

@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    /* Custom styles for modern UI */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
@@ -42,7 +41,7 @@
             Capture Face for {{ lecture.course }}
         </h2>
         <p class="text-center text-muted mb-5" style="font-family: 'Montserrat', sans-serif;">
-            Class: {{ lecture.lecture_class }}
+            Class: {{ lecture.lecture_class }}{% if is_makeup_class %} (Makeup Class){% endif %}
         </p>
 
         {% if messages %}
@@ -74,6 +73,7 @@
             <form id="capture-form" method="post" action="{% url 'capture_face' lecture.lecture_id %}">
                 {% csrf_token %}
                 <input type="hidden" name="image_data" id="image_data">
+                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
                 <button type="submit" id="submit-btn" class="d-none">Submit Captured Image</button>
             </form>
         </div>
@@ -86,6 +86,7 @@
             <form method="post" enctype="multipart/form-data" action="{% url 'capture_face' lecture.lecture_id %}" class="d-flex flex-column align-items-center">
                 {% csrf_token %}
                 <input type="file" name="image_file" accept="image/*" class="form-control-file mb-4 w-75" required>
+                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
                 <button type="submit" class="btn btn-custom px-5 py-2 fs-5">Upload and Recognize</button>
             </form>
         </div>
@@ -98,7 +99,6 @@
 </div>
 
 <script>
-    // Detect if the user is on a mobile device
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -110,15 +110,11 @@
     const mobileCameraInput = document.getElementById('mobile-camera');
 
     if (isMobile) {
-        // Show mobile camera input and hide webcam section
         webcamSection.classList.add('d-none');
         mobileCameraSection.classList.remove('d-none');
-
-        // Handle mobile camera input
         captureButton.addEventListener('click', () => {
             mobileCameraInput.click();
         });
-
         mobileCameraInput.addEventListener('change', () => {
             const file = mobileCameraInput.files[0];
             if (file) {
@@ -131,7 +127,6 @@
             }
         });
     } else {
-        // Access the device webcam for desktop
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 video.srcObject = stream;
@@ -140,8 +135,6 @@
                 console.error("Error accessing camera:", err);
                 alert("Could not access the camera. Please upload an image instead.");
             });
-
-        // Capture the image from the video feed
         captureButton.addEventListener('click', () => {
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);

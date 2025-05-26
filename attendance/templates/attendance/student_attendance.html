@@ -1,141 +1,39 @@
-{% extends 'base.html' %}
+<!-- attendance/templates/attendance/student_attendance.html -->
 
-{% block title %}My Attendance{% endblock %}
-
-{% block content %}
-<div class="attendance-container">
-  {% if lectures %}
-    {% for lecture_data in lectures %}
-      <header class="attendance-header">
-        <h3>My Attendance for {{ lecture_data.lecture.course.code }} - {{ lecture_data.lecture.lecture_class.name }}</h3>
-      </header>
-
-      <div class="table-wrapper">
-        <table class="attendance-table">
-          <thead>
-            <tr>
-              <th scope="col" class="sticky-col">Student</th>
-              {% for date in lecture_data.lecture_dates %}
-                <th scope="col">{{ date|date:"M d, Y" }} ({{ date|date:"D" }})</th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="row-tb">
-              <td class="sticky-col">{{ student.roll_no }}</td>
-              {% for date in lecture_data.lecture_dates %}
-                <td>
-                  {% with date_str=date|date:"Y-m-d" %}
-                    {% if date_str in lecture_data.attendance_dict %}
-                      <!-- Display the saved status -->
-                      <span class="status-{{ lecture_data.attendance_dict.date_str|lower }}">{{ lecture_data.attendance_dict.date_str }}</span>
-                    {% else %}
-                      <!-- Show 'Not Marked' for unmarked attendance -->
-                      <span class="status-not-marked">Not Marked</span>
-                    {% endif %}
-                  {% endwith %}
-                </td>
-              {% endfor %}
-            </tr>
-          </tbody>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Attendance</title>
+</head>
+<body>
+    <h1>Attendance Records</h1>
+    <h2>Current Semester: {{ current_semester }}</h2>
+    {% for semester, data in attendance_data.items %}
+        <h3>{{ semester }}</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Course Code</th>
+                    <th>Status</th>
+                    <th>Makeup Class</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in data %}
+                    <tr>
+                        <td>{{ record.date }}</td>
+                        <td>{{ record.course_code }}</td>
+                        <td>{{ record.status }}</td>
+                        <td>{{ record.is_makeup|yesno:"Yes,No" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">No attendance records found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
-      </div>
     {% endfor %}
-  {% else %}
-    <div class="no-lectures">
-      <p>No attendance records available. You may not be enrolled in any lectures.</p>
-    </div>
-  {% endif %}
-</div>
-
-<style>
-  .attendance-container {
-    padding: 20px;
-    max-width: 100%;
-    margin: 0 auto;
-  }
-
-  .attendance-header {
-    background: linear-gradient(45deg, #457b9d, #1d3557);
-    color: #fff;
-    text-align: center;
-    padding: 20px;
-    border-radius: 10px 10px 0 0;
-  }
-
-  .table-wrapper {
-    overflow-x: auto;
-    background: #fff;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    margin-bottom: 20px;
-  }
-
-  .attendance-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #fff;
-  }
-
-  .attendance-table th, .attendance-table td {
-    padding: 10px;
-    text-align: center;
-    border: 1px solid #e9ecef;
-    min-width: 100px;
-  }
-
-  .attendance-table th {
-    background: #457b9d;
-    color: #fff;
-  }
-
-  .sticky-col {
-    position: sticky;
-    left: 0;
-    background: #fff;
-    z-index: 1;
-    border-right: 2px solid #e9ecef;
-  }
-
-  .attendance-table th.sticky-col {
-    background: #457b9d;
-    color: #fff;
-  }
-
-  .status-present, .status-late, .status-absent, .status-not-marked {
-    display: inline-block;
-    padding: 5px 10px;
-    border-radius: 5px;
-    color: #fff;
-    font-weight: 600;
-  }
-
-  .status-present {
-    background: #28a745;
-  }
-
-  .status-late {
-    background: #007bff;
-  }
-
-  .status-absent {
-    background: #dc3545;
-  }
-
-  .status-not-marked {
-    background: #6c757d;
-    color: #fff;
-  }
-
-  .no-lectures {
-    text-align: center;
-    color: #dc3545;
-    font-weight: 600;
-    padding: 20px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  }
-</style>
-{% endblock %}
+</body>
+</html>

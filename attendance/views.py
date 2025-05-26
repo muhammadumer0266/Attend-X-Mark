@@ -67,14 +67,21 @@ def lecture_list(request, lecture_id=None):
     user = request.user
     if not user.is_staff:
         return render(request, 'attendance/access_denied.html', status=403)
-
+    
     lectures = Lecture.objects.filter(teacher=user, lecture_class__isnull=False).order_by("start_time")
     today = timezone.now().date()
 
-    # Add has_attendance_record attribute to each lecture
+    # Annotate lectures with attendance and makeup class flags
     for lecture in lectures:
         lecture.has_attendance_record = AttendanceRecord.objects.filter(
-            lecture=lecture, date=today, is_makeup_class=False
+            lecture=lecture,
+            date=today,
+            is_makeup_class=False
+        ).exists()
+        lecture.has_makeup_class_record = AttendanceRecord.objects.filter(
+            lecture=lecture,
+            date=today,
+            is_makeup_class=True
         ).exists()
 
     if lecture_id:
@@ -86,8 +93,13 @@ def lecture_list(request, lecture_id=None):
             messages.error(request, "This lecture has no associated class.")
             return redirect('lecture_list')
 
-    return render(request, 'attendance/lecture_list.html', {'lectures': lectures, 'user': user})
+    return render(request, 'attendance/lecture_list.html', {
+        'lectures': lectures,
+        'user': user
+    })
 
+
+@login_required
 def mark_attendance(request, lecture_id, is_makeup_class=False):
     lecture = get_object_or_404(Lecture, pk=lecture_id)
     today = timezone.now().date()
@@ -103,15 +115,32 @@ def mark_attendance(request, lecture_id, is_makeup_class=False):
     # Only allow students from the class
     students = lecture.lecture_class.students.all().order_by('roll_no')
 
+    # Check if attendance was pre-filled by face recognition
+    recognized_users = request.session.get('recognized_users', [])
+    if recognized_users and request.session.get('lecture_id') == lecture_id:
+        for user in recognized_users:
+            student = students.filter(roll_no=user['roll_no']).first()
+            if student:
+                Attendance.objects.update_or_create(
+                    attendance_record=record,
+                    student=student,
+                    defaults={'attendance_status': 'present'}
+                )
+
     if request.method == 'POST':
         formset = AttendanceFormSet(request.POST, queryset=Attendance.objects.filter(attendance_record=record))
         if formset.is_valid():
             for form in formset:
-                if form.has_changed():  # Only save if the form has changes
+                if form.has_changed():
                     attendance = form.save(commit=False)
                     attendance.attendance_record = record
                     attendance.save()
-            return redirect('attendance_success')  # Redirect to success page
+            # Clear session data after saving
+            request.session.pop('recognized_users', None)
+            request.session.pop('annotated_image', None)
+            request.session.pop('lecture_id', None)
+            request.session.pop('is_makeup_class', None)
+            return redirect('attendance_success')
     else:
         # Pre-fill data if not exists
         existing_attendance = Attendance.objects.filter(attendance_record=record)
@@ -120,7 +149,7 @@ def mark_attendance(request, lecture_id, is_makeup_class=False):
                 Attendance.objects.get_or_create(
                     attendance_record=record,
                     student=student,
-                    defaults={'attendance_status': 'absent'}  # Default status
+                    defaults={'attendance_status': 'absent'}
                 )
 
         formset = AttendanceFormSet(queryset=Attendance.objects.filter(attendance_record=record))
@@ -147,8 +176,12 @@ def add_makeup_class(request, lecture_id):
         messages.error(request, "A makeup class for this lecture and date already exists.")
         return redirect('lecture_list')
 
-    return mark_attendance(request, lecture_id, is_makeup_class=True)
+    # Store is_makeup_class in session and redirect to capture_face
+    request.session['is_makeup_class'] = True
+    request.session['lecture_id'] = lecture_id
+    return redirect('capture_face', lecture_id=lecture_id)
 
+@login_required
 def attendance_success(request):
     return render(request, 'attendance/success.html', {'message': 'Attendance marked successfully!'})
 
@@ -157,15 +190,14 @@ def capture_face(request, lecture_id):
     if not request.user.is_teacher:
         return render(request, 'attendance/access_denied.html', status=403)
 
-    # Get the lecture and associated class
     lecture = get_object_or_404(Lecture, pk=lecture_id)
     lecture_class = lecture.lecture_class
     if not lecture_class:
         messages.error(request, "This lecture has no associated class.")
         return redirect('lecture_list')
 
-    # Get students in the class
     students = lecture_class.students.all()
+    is_makeup_class = request.session.get('is_makeup_class', False)
 
     if request.method == 'POST':
         image_data = request.POST.get('image_data')
@@ -173,9 +205,9 @@ def capture_face(request, lecture_id):
 
         if not image_data and not uploaded_file:
             messages.error(request, "Please capture or upload an image.")
-            return render(request, 'attendance/capture_face.html', {'lecture': lecture})
+            return render(request, 'attendance/capture_face.html', {'lecture': lecture, 'is_makeup_class': is_makeup_class})
 
-        # Process the image (either from camera or upload)
+        # Process the image
         if image_data:
             image_data = image_data.split(',')[1]
             image_bytes = base64.b64decode(image_data)
@@ -195,8 +227,8 @@ def capture_face(request, lecture_id):
         record, created = AttendanceRecord.objects.get_or_create(
             lecture=lecture,
             date=today,
-            is_makeup_class=False,
-            defaults={'is_makeup_class': False}
+            is_makeup_class=is_makeup_class,
+            defaults={'is_makeup_class': is_makeup_class}
         )
 
         if img_cropped is not None:
@@ -222,10 +254,9 @@ def capture_face(request, lecture_id):
                 for user in users:
                     stored_embedding = pickle.loads(user.face_encoding).flatten()
                     distance = cosine(embedding_np, stored_embedding)
-                    if distance < min_distance and distance < 0.6:  # Tightened threshold for better accuracy
+                    if distance < min_distance and distance < 0.6:
                         min_distance = distance
                         recognized_user = user
-                        # Get the corresponding Student object
                         recognized_student = students.get(id=user.id)
 
                 if recognized_user and recognized_student:
@@ -238,13 +269,6 @@ def capture_face(request, lecture_id):
                         'position': face_position,
                         'name': f"{recognized_user.first_name} {recognized_user.last_name}"
                     })
-
-                    # Automatically mark attendance as present
-                    Attendance.objects.update_or_create(
-                        attendance_record=record,
-                        student=recognized_student,
-                        defaults={'attendance_status': 'present'}
-                    )
 
         # Draw rectangles and names on the image
         draw = ImageDraw.Draw(image)
@@ -268,7 +292,7 @@ def capture_face(request, lecture_id):
                 font=font
             )
 
-        # Save the annotated image to a BytesIO buffer and encode as base64
+        # Save the annotated image
         buffer = io.BytesIO()
         image.save(buffer, format="JPEG")
         image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
@@ -277,10 +301,14 @@ def capture_face(request, lecture_id):
         request.session['recognized_users'] = recognized_users
         request.session['annotated_image'] = image_base64
         request.session['lecture_id'] = lecture_id
+        request.session['is_makeup_class'] = is_makeup_class
 
         return redirect('capture_success')
 
-    return render(request, 'attendance/capture_face.html', {'lecture': lecture})
+    return render(request, 'attendance/capture_face.html', {
+        'lecture': lecture,
+        'is_makeup_class': is_makeup_class
+    })
 
 @login_required
 def capture_success(request):
@@ -290,19 +318,69 @@ def capture_success(request):
     recognized_users = request.session.get('recognized_users', [])
     annotated_image = request.session.get('annotated_image', '')
     lecture_id = request.session.get('lecture_id')
+    is_makeup_class = request.session.get('is_makeup_class', False)
 
-    if not recognized_users or not annotated_image or not lecture_id:
-        messages.error(request, "No face capture data found. Please capture an image first.")
+    if not lecture_id:
+        messages.error(request, "No lecture data found. Please capture an image first.")
         return redirect('lecture_list')
 
     lecture = get_object_or_404(Lecture, pk=lecture_id)
 
+    # Redirect to mark_attendance to review/edit attendance
+    return redirect('mark_attendance', lecture_id=lecture_id)
+
+
+# attendance/views.py
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from accounts.models import Student
+from attendance.models import Attendance, AttendanceRecord, Lecture
+from subjects.models import Semester
+from django.db.models import Q
+from django.utils import timezone
+
+@login_required
+def student_attendance_view(request):
+    user = request.user
+    if not user.is_student:
+        return render(request, 'attendance/error.html', {'message': 'Only students can view this page.'})
+
+    student = Student.objects.get(id=user.id)
+    current_semester = student.semester
+    all_semesters = [current_semester] + list(Semester.objects.exclude(id=current_semester.id))
+
+    attendance_data = {}
+    for semester in all_semesters:
+        lectures = Lecture.objects.filter(
+            lecture_class__semester=semester,
+            lecture_class__degree_level=student.degree_level,
+            lecture_class__discipline=student.discipline,
+            lecture_class__section=student.section,
+            lecture_class__shift=student.shift
+        )
+        records = AttendanceRecord.objects.filter(lecture__in=lectures)
+        attendances = Attendance.objects.filter(
+            student=student,
+            attendance_record__in=records
+        ).select_related('attendance_record__lecture')
+
+        semester_data = []
+        for attendance in attendances:
+            lecture = attendance.attendance_record.lecture
+            semester_data.append({
+                'date': attendance.attendance_record.date,
+                'course_code': lecture.course.code,
+                'status': attendance.attendance_status,
+                'is_makeup': attendance.attendance_record.is_makeup_class
+            })
+        attendance_data[semester.name] = semester_data
+
     context = {
-        'recognized_users': recognized_users,
-        'annotated_image': annotated_image,
-        'lecture': lecture,
+        'attendance_data': attendance_data,
+        'current_semester': current_semester.name
     }
-    return render(request, 'attendance/capture_success.html', context)
+    return render(request, 'attendance/student_attendance.html', context)
 
 @login_required
 def edit_attendance(request, lecture_id, attendance_record_id):

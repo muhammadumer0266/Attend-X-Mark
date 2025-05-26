@@ -2,8 +2,10 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.contrib import messages
 from attendance.models import Lecture, AttendanceRecord, Attendance
 from accounts.models import Student
+from django.shortcuts import redirect
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
@@ -197,6 +199,22 @@ def student_attendance_report(request, lecture_id):
         'student_data': student_data,
     }
     return render(request, 'reports/student_attendance_report.html', context)
+
+@login_required
+def delete_attendance(request, lecture_id, attendance_record_id):
+    if not request.user.is_teacher:
+        return render(request, 'attendance/access_denied.html', status=403)
+
+    lecture = get_object_or_404(Lecture, pk=lecture_id)
+    if lecture.teacher != request.user:
+        return render(request, 'attendance/access_denied.html', status=403)
+
+    record = get_object_or_404(AttendanceRecord, id=attendance_record_id, lecture=lecture)
+    record_date = record.date.strftime('%d/%m/%Y')
+    record.delete()
+    messages.success(request, f"Attendance record for {record_date} deleted successfully.")
+    return redirect('student_attendance_report', lecture_id=lecture_id)
+
 
 @login_required
 def teacher_lectures_report(request):

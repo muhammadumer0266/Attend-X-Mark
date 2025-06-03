@@ -1,3 +1,15 @@
+# run celery worker
+# celery -A axm_project worker --loglevel=info --pool=solo
+
+# celery beat run 
+# celery -A axm_project beat --loglevel=info
+
+#GET CELERY SETTINGS
+# Get-Process | Where-Object { $_.ProcessName -like "*celery*" }
+#STOP CELERY
+# Stop-Process -Id 10156 -Force
+
+
 """
 Django settings for axm_project project.
 
@@ -26,7 +38,7 @@ AUTHENTICATION_BACKENDS = [
 AXES_ENABLED = True
 AXES_LOGIN_FAILURE_LIMIT = 10
 AXES_LOCK_OUT_AT_FAILURE = True
-AXES_COOLOFF_TIME = 0.05
+AXES_COOLOFF_TIME = 1
 AXES_LOCKOUT_TEMPLATE = 'accounts/lockout.html'
 AXES_RESET_ON_SUCCESS = True
 AXES_VERBOSE = True
@@ -60,6 +72,7 @@ DEFAULT_FROM_EMAIL = 'attendxmark@gmail.com'  # Replace with your Gmail address
 # Application definition
 
 
+
 INSTALLED_APPS = [
     "admin_interface",
     "colorfield",
@@ -78,9 +91,21 @@ INSTALLED_APPS = [
     'subjects',       # Subjects
     'pwa',
     'axes',
+    'django_celery_beat',
 ]
 
+#            ##########            celery                              ##########################################################################
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis as message broker
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Redis for results
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Karachi'  # Match your project timezone
 
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+#############################################################################################################
 
 RECAPTCHA_PUBLIC_KEY = '6LePDycrAAAAAMSQgSt6VPkJKkt6BsZ2qW6BXxyI'
 RECAPTCHA_PRIVATE_KEY = '6LePDycrAAAAAG5lOVFKBzxVxabJRF68LBZwEok4' 
@@ -151,17 +176,6 @@ PWA_APP_SCREENSHOTS = [
 # Service worker path   
 PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'axm_project', 'static', 'serviceworker.js')
 
-#######################            celery                      ###################################################################################################
-
-# Celery Configuration
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Asia/Karachi'  # Adjust to your timezone
-
-##########################################################################################################################
 
 
 AUTH_USER_MODEL = 'accounts.CustomUser'  # Custom user model
@@ -224,7 +238,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Karachi'
 
 USE_I18N = True
 

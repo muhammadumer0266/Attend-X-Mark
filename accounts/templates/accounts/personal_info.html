@@ -110,12 +110,19 @@
         font-weight: 600;
         cursor: pointer;
         transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+        opacity: 0.5;
+        pointer-events: none;
     }
 
     .personal-info-btn-save:hover {
         background: linear-gradient(135deg, #1d3557, #457b9d); /* Reverse gradient on hover */
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(29, 53, 87, 0.3);
+    }
+
+    .personal-info-btn-save.enabled {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .personal-info-btn-save i {
@@ -128,12 +135,85 @@
         margin-top: 5px;
     }
 
+    /* OTP Field Styles */
+    .otp-field-container {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+
+    .otp-input-wrapper {
+        flex: 2;
+    }
+
+    .otp-button-wrapper {
+        flex: 1;
+    }
+
+    .generate-otp-btn {
+        padding: 12px 20px;
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+        width: 100%;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .generate-otp-btn:hover {
+        background: linear-gradient(135deg, #20c997, #28a745);
+        transform: translateY(-1px);
+    }
+
+    .generate-otp-btn.enabled {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .generate-otp-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+
+    .otp-message {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .otp-message.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .otp-message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
     @media (max-width: 768px) {
         .personal-info-form-group {
             grid-template-columns: 1fr;
         }
         .personal-info-form-container {
             padding: 20px;
+        }
+        .otp-field-container {
+            flex-direction: column;
+            gap: 10px;
+        }
+        .otp-input-wrapper,
+        .otp-button-wrapper {
+            flex: none;
+            width: 100%;
         }
     }
 </style>
@@ -143,6 +223,16 @@
     <div class="personal-info-container">
         <div class="personal-info-form-container">
             <h2 class="personal-info-form-title">Personal Information</h2>
+            
+            <!-- Display Django messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="otp-message {% if message.tags == 'success' %}success{% else %}error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
             <!-- Display form errors -->
             {% if teacher_form.errors or student_form.errors %}
                 <div class="error-message">
@@ -164,6 +254,7 @@
                     </ul>
                 </div>
             {% endif %}
+            
             <form method="post" enctype="multipart/form-data" id="personal-info-form">
                 {% csrf_token %}
                 {% if is_teacher and teacher_form %}
@@ -184,6 +275,23 @@
                     <div class="personal-info-form-group">
                         <div class="personal-info-field">{{ teacher_form.specialization.label_tag }}{{ teacher_form.specialization }}</div>
                         <div class="personal-info-field">{{ teacher_form.contact_number.label_tag }}{{ teacher_form.contact_number }}</div>
+                    </div>
+                    <!-- OTP Field -->
+                    <div class="personal-info-form-group single-column">
+                        <div class="personal-info-field">
+                            <label for="{{ teacher_form.otp.id_for_label }}">{{ teacher_form.otp.label }}</label>
+                            <div class="otp-field-container">
+                                <div class="otp-input-wrapper">
+                                    {{ teacher_form.otp }}
+                                </div>
+                                <div class="otp-button-wrapper">
+                                    <button type="button" class="generate-otp-btn" id="generate-otp-btn">
+                                        Generate OTP
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="otp-message-container"></div>
+                        </div>
                     </div>
                 {% elif is_student and student_form %}
                     <div class="personal-info-form-group single-column">
@@ -208,6 +316,23 @@
                         <div class="personal-info-field">{{ student_form.section.label_tag }}{{ student_form.section }}</div>
                         <div class="personal-info-field">{{ student_form.shift.label_tag }}{{ student_form.shift }}</div>
                     </div>
+                    <!-- OTP Field -->
+                    <div class="personal-info-form-group single-column">
+                        <div class="personal-info-field">
+                            <label for="{{ student_form.otp.id_for_label }}">{{ student_form.otp.label }}</label>
+                            <div class="otp-field-container">
+                                <div class="otp-input-wrapper">
+                                    {{ student_form.otp }}
+                                </div>
+                                <div class="otp-button-wrapper">
+                                    <button type="button" class="generate-otp-btn" id="generate-otp-btn">
+                                        Generate OTP
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="otp-message-container"></div>
+                        </div>
+                    </div>
                 {% endif %}
                 <button type="submit" class="personal-info-btn-save" id="submit-btn">
                     <i class="fas fa-save"></i> Save
@@ -216,4 +341,196 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('personal-info-form');
+    const generateOtpBtn = document.getElementById('generate-otp-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const otpInput = document.querySelector('input[name="otp"]');
+    const otpMessageContainer = document.getElementById('otp-message-container');
+    
+    // Get all required form inputs (excluding OTP initially)
+    const requiredInputs = form.querySelectorAll('input[required], select[required]');
+    const emailInput = form.querySelector('input[name="email"]');
+    
+    // Function to show OTP messages
+    function showOtpMessage(message, type) {
+        otpMessageContainer.innerHTML = `<div class="otp-message ${type}">${message}</div>`;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                otpMessageContainer.innerHTML = '';
+            }, 5000);
+        }
+    }
+    
+    // Function to check if all required fields are filled
+    function checkFormCompletion() {
+        let allFilled = true;
+        
+        // Check all required fields except OTP
+        const fieldsToCheck = Array.from(requiredInputs).concat([emailInput]);
+        
+        fieldsToCheck.forEach(input => {
+            if (input && input.name !== 'otp') {
+                if (input.type === 'select-one') {
+                    if (!input.value || input.value === '') {
+                        allFilled = false;
+                    }
+                } else {
+                    if (!input.value.trim()) {
+                        allFilled = false;
+                    }
+                }
+            }
+        });
+        
+        // Enable/disable Generate OTP button
+        if (allFilled && emailInput && emailInput.value.trim()) {
+            generateOtpBtn.classList.add('enabled');
+        } else {
+            generateOtpBtn.classList.remove('enabled');
+        }
+        
+        // Enable submit button only if OTP is also filled
+        if (allFilled && otpInput && otpInput.value.trim().length === 6) {
+            submitBtn.classList.add('enabled');
+        } else {
+            submitBtn.classList.remove('enabled');
+        }
+    }
+    
+    // Add event listeners to all form inputs
+    const allInputs = form.querySelectorAll('input, select, textarea');
+    allInputs.forEach(input => {
+        input.addEventListener('input', checkFormCompletion);
+        input.addEventListener('change', checkFormCompletion);
+    });
+    
+    // Initialize form state check
+    checkFormCompletion();
+    
+    // Generate OTP button click handler
+    generateOtpBtn.addEventListener('click', function() {
+        if (!generateOtpBtn.classList.contains('enabled')) {
+            return;
+        }
+        
+        const email = emailInput.value.trim();
+        if (!email) {
+            showOtpMessage('Please enter an email address first.', 'error');
+            return;
+        }
+        
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showOtpMessage('Please enter a valid email address.', 'error');
+            return;
+        }
+        
+        // Disable button temporarily
+        generateOtpBtn.disabled = true;
+        generateOtpBtn.textContent = 'Sending...';
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send AJAX request to generate OTP
+        fetch('/generate-personal-info-otp/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showOtpMessage(data.message, 'success');
+                // Enable OTP input field
+                if (otpInput) {
+                    otpInput.disabled = false;
+                    otpInput.focus();
+                }
+                // Reset button after 30 seconds (to prevent spam)
+                setTimeout(() => {
+                    generateOtpBtn.disabled = false;
+                    generateOtpBtn.textContent = 'Generate OTP';
+                }, 30000);
+            } else {
+                showOtpMessage(data.message, 'error');
+                // Re-enable button immediately on error
+                generateOtpBtn.disabled = false;
+                generateOtpBtn.textContent = 'Generate OTP';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showOtpMessage('Failed to send OTP. Please try again.', 'error');
+            // Re-enable button on network error
+            generateOtpBtn.disabled = false;
+            generateOtpBtn.textContent = 'Generate OTP';
+        });
+    });
+    
+    // OTP input validation (6 digits only)
+    if (otpInput) {
+        otpInput.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length > 6) {
+                value = value.substring(0, 6); // Limit to 6 digits
+            }
+            this.value = value;
+            checkFormCompletion();
+        });
+        
+        // Auto-submit when 6 digits are entered (optional)
+        otpInput.addEventListener('input', function() {
+            if (this.value.length === 6 && submitBtn.classList.contains('enabled')) {
+                // Optional: Add a small delay before auto-submit
+                setTimeout(() => {
+                    if (this.value.length === 6) {
+                        // You can uncomment the next line for auto-submit
+                        // form.submit();
+                    }
+                }, 500);
+            }
+        });
+    }
+    
+    // Form submission handler
+    form.addEventListener('submit', function(e) {
+        if (!submitBtn.classList.contains('enabled')) {
+            e.preventDefault();
+            showOtpMessage('Please fill all required fields and enter a valid OTP.', 'error');
+            return false;
+        }
+        
+        // Additional validation before submit
+        if (!otpInput || otpInput.value.trim().length !== 6) {
+            e.preventDefault();
+            showOtpMessage('Please enter a valid 6-digit OTP.', 'error');
+            return false;
+        }
+        
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    });
+    
+    // Handle form reset if needed
+    window.addEventListener('beforeunload', function() {
+        if (generateOtpBtn.disabled && generateOtpBtn.textContent === 'Sending...') {
+            generateOtpBtn.disabled = false;
+            generateOtpBtn.textContent = 'Generate OTP';
+        }
+    });
+});
+</script>
 {% endblock %}

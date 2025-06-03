@@ -67,6 +67,12 @@ class Class(models.Model):
         null=True,
         help_text="The room number where the class is held (e.g., B-101)"
     )
+    session = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        help_text="The session of the class (e.g., 21 - 25)"
+    )
     section = models.ForeignKey(
         Section,
         on_delete=models.SET_NULL,
@@ -119,7 +125,7 @@ class Class(models.Model):
 
     def __str__(self):
         section = self.section if self.section else "No Section"
-        return f"{self.degree_level}{self.discipline} {self.semester} - (Section {section})"
+        return f"{self.degree_level}{self.discipline} {self.semester} {self.shift} - Section {section} (Session {self.session})"
 
     @property
     def students(self):

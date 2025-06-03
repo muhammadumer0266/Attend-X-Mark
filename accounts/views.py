@@ -10,7 +10,11 @@ from django.conf import settings
 from django.utils.crypto import get_random_string
 from axes.helpers import get_client_ip_address
 from axes.models import AccessAttempt
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
+from .decorators import teacher_required
 from .forms import (
     CustomUserCreationForm,
     UserDetailsForm,
@@ -23,8 +27,8 @@ from .forms import (
     TeacherAdditionalInfoForm,
     StudentAdditionalInfoForm
 )
-from .models import CustomUser, Teacher, Student, PasswordResetOTP
-from attendance.models import Leave,AttendanceRecord
+from .models import CustomUser, Teacher, Student, PasswordResetOTP, PersonalInfoOTP
+from attendance.models import Leave, AttendanceRecord
 
 def home(request):
     return render(request, 'accounts/home.html')
@@ -254,7 +258,7 @@ def unblock_device_verify(request):
         form = VerifyUnblockOTPForm()
     return render(request, 'accounts/unblock_device_verify.html', {'form': form})
 
-@login_required(login_url="/accounts/login/")
+@login_required(login_url="/login")
 def dashboard(request):
     staff_users = CustomUser.objects.filter(is_staff=True)
     current_date = timezone.now().strftime("%B %d, %Y")
@@ -291,7 +295,60 @@ def dashboard(request):
         'attendance_records_count': attendance_records_count  # Add to context
     })
 
-@login_required(login_url="/login/")
+@login_required(login_url="/login")
+@csrf_exempt
+def generate_personal_info_otp(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            
+            if not email:
+                return JsonResponse({'success': False, 'message': 'Email is required'})
+            
+            # Generate a 6-digit OTP
+            otp = get_random_string(length=6, allowed_chars='0123456789')
+            
+            # Save OTP to the database
+            PersonalInfoOTP.objects.create(
+                user=request.user,
+                email=email,
+                otp=otp
+            )
+            
+            # Send OTP via email
+            subject = 'Personal Information Update OTP - AttendXMark'
+            message = (
+                f'Hello {request.user.first_name},\n\n'
+                f'Your OTP for updating personal information is: {otp}\n\n'
+                'Please use this OTP to verify your email address. This OTP is valid for 10 minutes.\n\n'
+                'Best regards,\nThe AttendXMark Team'
+            )
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
+            
+            send_mail(
+                subject,
+                message,
+                from_email,
+                recipient_list,
+                fail_silently=False,
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'OTP has been sent to {email}'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False, 
+                'message': f'Error sending OTP: {str(e)}'
+            })
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+@login_required(login_url="/login")
 def personal_info(request):
     user = request.user
 
@@ -301,38 +358,92 @@ def personal_info(request):
 
     if request.method == 'POST':
         print("POST request received, files:", request.FILES)  # Debug
-        if user.is_teacher:
-            teacher_instance = Teacher.objects.get(id=user.id)
-            teacher_form = TeacherAdditionalInfoForm(request.POST, request.FIELDS, instance=teacher_instance)
-            if teacher_form.is_valid():
-                print("Teacher form is valid, saving...")  # Debug
-                teacher = teacher_form.save()
-                # Update the user object's email, contact_number, and profile_picture
-                user.email = teacher_form.cleaned_data['email']
-                user.contact_number = teacher_form.cleaned_data['contact_number']  # Add this line
-                if teacher_form.cleaned_data['profile_picture']:
-                    user.profile_picture = teacher_form.cleaned_data['profile_picture']
-                user.save()
-                print("Teacher profile picture after save:", teacher.profile_picture)  # Debug
-                return redirect('profile')
-            else:
-                print("Teacher form errors:", teacher_form.errors)
-        elif user.is_student:
-            student_instance = Student.objects.get(id=user.id)
-            student_form = StudentAdditionalInfoForm(request.POST, request.FILES, instance=student_instance)
-            if student_form.is_valid():
-                print("Student form is valid, saving...")  # Debug
-                student = student_form.save()
-                # Update the user object's email, contact_number, and profile_picture
-                user.email = student_form.cleaned_data['email']
-                user.contact_number = student_form.cleaned_data['contact_number']  # Add this line
-                if student_form.cleaned_data['profile_picture']:
-                    user.profile_picture = student_form.cleaned_data['profile_picture']
-                user.save()
-                print("Student profile picture after save:", student.profile_picture)  # Debug
-                return redirect('profile')
-            else:
-                print("Student form errors:", student_form.errors)
+        
+        # Get OTP from form data
+        otp_entered = request.POST.get('otp')
+        email_entered = request.POST.get('email')
+        
+        # Verify OTP before processing the form
+        if otp_entered and email_entered:
+            try:
+                otp_record = PersonalInfoOTP.objects.filter(
+                    user=user,
+                    email=email_entered,
+                    otp=otp_entered,
+                    is_used=False,
+                    is_verified=False
+                ).latest('created_at')
+                
+                if otp_record.is_expired():
+                    messages.error(request, 'OTP has expired. Please generate a new one.')
+                    # Redirect back to form with error
+                    if user.is_teacher:
+                        teacher_instance = Teacher.objects.get(id=user.id)
+                        teacher_form = TeacherAdditionalInfoForm(instance=teacher_instance)
+                    elif user.is_student:
+                        student_instance = Student.objects.get(id=user.id)
+                        student_form = StudentAdditionalInfoForm(instance=student_instance)
+                else:
+                    # OTP is valid, mark as verified and proceed with form processing
+                    otp_record.is_verified = True
+                    otp_record.is_used = True
+                    otp_record.save()
+                    
+                    if user.is_teacher:
+                        teacher_instance = Teacher.objects.get(id=user.id)
+                        teacher_form = TeacherAdditionalInfoForm(request.POST, request.FILES, instance=teacher_instance)
+                        if teacher_form.is_valid():
+                            print("Teacher form is valid, saving...")  # Debug
+                            teacher = teacher_form.save()
+                            # Update the user object's email, contact_number, and profile_picture
+                            user.email = teacher_form.cleaned_data['email']
+                            user.contact_number = teacher_form.cleaned_data['contact_number']
+                            if teacher_form.cleaned_data['profile_picture']:
+                                user.profile_picture = teacher_form.cleaned_data['profile_picture']
+                            user.save()
+                            print("Teacher profile picture after save:", teacher.profile_picture)  # Debug
+                            messages.success(request, 'Personal information updated successfully!')
+                            return redirect('profile')
+                        else:
+                            print("Teacher form errors:", teacher_form.errors)
+                            messages.error(request, 'Please correct the errors in the form.')
+                    elif user.is_student:
+                        student_instance = Student.objects.get(id=user.id)
+                        student_form = StudentAdditionalInfoForm(request.POST, request.FILES, instance=student_instance)
+                        if student_form.is_valid():
+                            print("Student form is valid, saving...")  # Debug
+                            student = student_form.save()
+                            # Update the user object's email, contact_number, and profile_picture
+                            user.email = student_form.cleaned_data['email']
+                            user.contact_number = student_form.cleaned_data['contact_number']
+                            if student_form.cleaned_data['profile_picture']:
+                                user.profile_picture = student_form.cleaned_data['profile_picture']
+                            user.save()
+                            print("Student profile picture after save:", student.profile_picture)  # Debug
+                            messages.success(request, 'Personal information updated successfully!')
+                            return redirect('profile')
+                        else:
+                            print("Student form errors:", student_form.errors)
+                            messages.error(request, 'Please correct the errors in the form.')
+                            
+            except PersonalInfoOTP.DoesNotExist:
+                messages.error(request, 'Invalid OTP. Please try again.')
+                # Redirect back to form with error
+                if user.is_teacher:
+                    teacher_instance = Teacher.objects.get(id=user.id)
+                    teacher_form = TeacherAdditionalInfoForm(instance=teacher_instance)
+                elif user.is_student:
+                    student_instance = Student.objects.get(id=user.id)
+                    student_form = StudentAdditionalInfoForm(instance=student_instance)
+        else:
+            messages.error(request, 'Please enter OTP to verify your email.')
+            # Redirect back to form with error
+            if user.is_teacher:
+                teacher_instance = Teacher.objects.get(id=user.id)
+                teacher_form = TeacherAdditionalInfoForm(request.POST, request.FILES, instance=teacher_instance)
+            elif user.is_student:
+                student_instance = Student.objects.get(id=user.id)  
+                student_form = StudentAdditionalInfoForm(request.POST, request.FILES, instance=student_instance)
     else:
         if user.is_teacher:
             teacher_instance = Teacher.objects.get(id=user.id)
@@ -349,7 +460,7 @@ def personal_info(request):
     }
     return render(request, 'accounts/personal_info.html', context)
 
-@login_required(redirect_field_name='login')
+@login_required(login_url="/login")
 def profile(request):
     user = request.user
     teacher = student = None
@@ -365,7 +476,7 @@ def profile(request):
         'student': student
     })
 
-@login_required(login_url="/login/")
+@login_required(login_url="/login")
 def profile_settings(request):
     user = request.user
 
@@ -395,12 +506,12 @@ def profile_settings(request):
 
     return render(request, 'accounts/profile_settings.html', {'user_form': user_form, 'password_form': password_form})
 
-@login_required(login_url="/login/")
+@login_required(login_url="/login")
 def custom_logout_view(request):
     logout(request)
     return redirect('login')
 
-@login_required
+@teacher_required
 def update_teacher_info(request):
     try:
         teacher = Teacher.objects.get(id=request.user.id)

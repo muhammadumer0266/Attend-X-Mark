@@ -33,12 +33,17 @@
         background-color: #C9F0DD;
         color: #0C4B33;
     }
+    .image-preview {
+        max-width: 200px;
+        margin: 10px;
+        border-radius: 8px;
+    }
 </style>
 
 <div class="container min-vh-100 d-flex align-items-center justify-content-center py-5">
     <div class="card p-5 w-100 fade-in" style="max-width: 800px;">
         <h2 class="text-center mb-3 fw-bold fs-2" style="font-family: 'Poppins', sans-serif; color: #0C4B33;">
-            Capture Face for {{ lecture.course }}
+            Capture Faces for {{ lecture.course }}
         </h2>
         <p class="text-center text-muted mb-5" style="font-family: 'Montserrat', sans-serif;">
             Class: {{ lecture.lecture_class }}{% if is_makeup_class %} (Makeup Class){% endif %}
@@ -53,42 +58,36 @@
             {% endfor %}
         {% endif %}
 
+        <!-- Upload Images Section -->
+        <div class="border-top pt-5">
+            <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
+                Upload Images for Face Recognition
+            </h3>
+            <form method="post" enctype="multipart/form-data" action="{% url 'capture_face' lecture.lecture_id %}" id="upload-form" class="d-flex flex-column align-items-center">
+                {% csrf_token %}
+                <input type="file" name="image_files" accept="image/*" multiple class="form-control-file mb-4 w-75" id="image-files" required>
+                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
+                <button type="submit" class="btn btn-custom px-5 py-2 fs-5">Upload and Recognize</button>
+            </form>
+            <div id="preview-container" class="d-flex flex-wrap justify-content-center mt-3"></div>
+        </div>
+
         <!-- Camera Capture Section -->
         <div class="mb-5">
             <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
-                Option 1: Capture from Camera
+                Capture from Camera
             </h3>
             <div id="webcam-section" class="d-flex justify-content-center">
                 <video id="video" class="rounded border border-secondary" width="640" height="480" autoplay></video>
             </div>
             <div id="mobile-camera-section" class="d-none d-flex justify-content-center">
-                <input type="file" id="mobile-camera" accept="image/*" capture="environment" class="form-control-file w-75">
+                <input type="file" id="mobile-camera" accept="image/*" capture="environment" multiple class="form-control-file w-75">
             </div>
             <canvas id="canvas" width="640" height="480" class="d-none"></canvas>
-            <div class="d-flex justify-content-center mt-4">
+            <div class="d-flex justify-content-center mt-4 gap-3">
                 <button id="capture" class="btn btn-custom px-5 py-2 fs-5">Capture Image</button>
+                <button id="add-to-upload" class="btn btn-custom px-5 py-2 fs-5 d-none">Add to Upload</button>
             </div>
-
-            <!-- Hidden Form to Submit Captured Image -->
-            <form id="capture-form" method="post" action="{% url 'capture_face' lecture.lecture_id %}">
-                {% csrf_token %}
-                <input type="hidden" name="image_data" id="image_data">
-                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
-                <button type="submit" id="submit-btn" class="d-none">Submit Captured Image</button>
-            </form>
-        </div>
-
-        <!-- Upload Image Section -->
-        <div class="border-top pt-5">
-            <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
-                Option 2: Upload an Image
-            </h3>
-            <form method="post" enctype="multipart/form-data" action="{% url 'capture_face' lecture.lecture_id %}" class="d-flex flex-column align-items-center">
-                {% csrf_token %}
-                <input type="file" name="image_file" accept="image/*" class="form-control-file mb-4 w-75" required>
-                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
-                <button type="submit" class="btn btn-custom px-5 py-2 fs-5">Upload and Recognize</button>
-            </form>
         </div>
 
         <!-- Back to Lectures -->
@@ -103,11 +102,13 @@
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const captureButton = document.getElementById('capture');
-    const imageDataInput = document.getElementById('image_data');
-    const submitButton = document.getElementById('submit-btn');
+    const addToUploadButton = document.getElementById('add-to-upload');
     const webcamSection = document.getElementById('webcam-section');
     const mobileCameraSection = document.getElementById('mobile-camera-section');
     const mobileCameraInput = document.getElementById('mobile-camera');
+    const imageFilesInput = document.getElementById('image-files');
+    const previewContainer = document.getElementById('preview-container');
+    let capturedImages = [];
 
     if (isMobile) {
         webcamSection.classList.add('d-none');
@@ -116,15 +117,26 @@
             mobileCameraInput.click();
         });
         mobileCameraInput.addEventListener('change', () => {
-            const file = mobileCameraInput.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    imageDataInput.value = reader.result;
-                    submitButton.click();
-                };
-                reader.readAsDataURL(file);
+            const files = mobileCameraInput.files;
+            if (files.length > 0) {
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'image-preview';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                addToUploadButton.classList.remove('d-none');
             }
+        });
+        addToUploadButton.addEventListener('click', () => {
+            const dataTransfer = new DataTransfer();
+            Array.from(mobileCameraInput.files).forEach(file => dataTransfer.items.add(file));
+            imageFilesInput.files = dataTransfer.files;
+            document.getElementById('upload-form').submit();
         });
     } else {
         navigator.mediaDevices.getUserMedia({ video: true })
@@ -133,14 +145,32 @@
             })
             .catch(err => {
                 console.error("Error accessing camera:", err);
-                alert("Could not access the camera. Please upload an image instead.");
+                alert("Could not access the camera. Please upload images instead.");
             });
         captureButton.addEventListener('click', () => {
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL('image/jpeg');
-            imageDataInput.value = imageData;
-            submitButton.click();
+            const img = document.createElement('img');
+            img.src = imageData;
+            img.className = 'image-preview';
+            previewContainer.appendChild(img);
+            capturedImages.push(imageData);
+            addToUploadButton.classList.remove('d-none');
+        });
+        addToUploadButton.addEventListener('click', () => {
+            const dataTransfer = new DataTransfer();
+            capturedImages.forEach((dataUrl, index) => {
+                fetch(dataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        dataTransfer.items.add(new File([blob], `capture_${index}.jpg`, { type: 'image/jpeg' }));
+                        if (index === capturedImages.length - 1) {
+                            imageFilesInput.files = dataTransfer.files;
+                            document.getElementById('upload-form').submit();
+                        }
+                    });
+            });
         });
     }
 </script>

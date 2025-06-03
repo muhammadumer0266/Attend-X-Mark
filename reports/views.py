@@ -1,14 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
-from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from attendance.models import Lecture, AttendanceRecord, Attendance
-from accounts.models import Student
-from django.shortcuts import redirect
+from accounts.decorators import teacher_required
 import io
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.pagesizes import LEGAL, landscape
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -16,16 +13,12 @@ from reportlab.lib.units import inch
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 
-@login_required
+@teacher_required
 def student_attendance_report(request, lecture_id):
-    if not request.user.is_teacher:
-        return render(request, 'attendance/access_denied.html', status=403)
-
     lecture = get_object_or_404(Lecture, pk=lecture_id)
     teacher = lecture.teacher
     students = lecture.lecture_class.students.all().order_by('roll_no')
     attendance_records = AttendanceRecord.objects.filter(lecture=lecture).order_by('date')
-    # Update dates to include both date and record ID
     record_data = [{'date': record.date, 'id': record.id} for record in attendance_records]
 
     student_data = []
@@ -55,11 +48,11 @@ def student_attendance_report(request, lecture_id):
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
-            pagesize=landscape(A4),
-            topMargin=1*inch,
-            bottomMargin=1*inch,
-            leftMargin=1*inch,
-            rightMargin=1*inch
+            pagesize=landscape(LEGAL),
+            topMargin=0.8*inch,
+            bottomMargin=0.8*inch,
+            leftMargin=0.5*inch,
+            rightMargin=0.5*inch
         )
         elements = []
 
@@ -67,34 +60,34 @@ def student_attendance_report(request, lecture_id):
         title_style = ParagraphStyle(
             'TitleStyle',
             parent=styles['Heading1'],
-            fontSize=18,
-            leading=22,
+            fontSize=16,
+            leading=20,
             textColor=colors.HexColor('#1E3A8A'),
-            spaceAfter=12,
+            spaceAfter=10,
             alignment=1
         )
         subtitle_style = ParagraphStyle(
             'SubtitleStyle',
             parent=styles['Normal'],
-            fontSize=12,
-            leading=14,
+            fontSize=10,
+            leading=12,
             textColor=colors.HexColor('#4B5563'),
-            spaceAfter=10,
+            spaceAfter=8,
             alignment=1
         )
         header_left_style = ParagraphStyle(
             'HeaderLeftStyle',
             parent=styles['Normal'],
-            fontSize=10,
-            leading=12,
+            fontSize=8,
+            leading=10,
             textColor=colors.HexColor('#4B5563'),
             alignment=0
         )
         header_right_style = ParagraphStyle(
             'HeaderRightStyle',
             parent=styles['Normal'],
-            fontSize=10,
-            leading=12,
+            fontSize=8,
+            leading=10,
             textColor=colors.HexColor('#4B5563'),
             alignment=2
         )
@@ -107,47 +100,140 @@ def student_attendance_report(request, lecture_id):
             f"Generated on: {timezone.now().strftime('%d/%m/%Y %H:%M %p PKT')}",
             header_right_style
         ))
-        elements.append(Spacer(1, 0.1*inch))
+        elements.append(Spacer(1, 0.05*inch))
         elements.append(Paragraph(f"Attendance Report", title_style))
         elements.append(Paragraph(
             f"Lecture: {lecture} | Class: {lecture.lecture_class}",
             subtitle_style
         ))
 
-        table_data = [['Roll No', 'Student'] + [record['date'].strftime('%d/%m/%Y') for record in record_data] + ['Percentage']]
+        num_records = len(record_data)
+        
+        if num_records <= 10:
+            font_size = 10
+            header_font_size = 10
+        elif num_records <= 20:
+            font_size = 8
+            header_font_size = 9
+        elif num_records <= 30:
+            font_size = 7
+            header_font_size = 8
+        elif num_records <= 42:
+            font_size = 6
+            header_font_size = 7
+        else:
+            font_size = 5
+            header_font_size = 6
+
+        page_width = landscape(LEGAL)[0] - 1*inch
+        roll_no_width = 0.6*inch
+        name_width = 1.8*inch
+        percentage_width = 0.8*inch
+        available_width = page_width - roll_no_width - name_width - percentage_width
+        
+        if num_records > 0:
+            date_col_width = min(available_width / num_records, 0.8*inch)
+            date_col_width = max(date_col_width, 0.4*inch)
+        else:
+            date_col_width = 0.8*inch
+
+        table_data = []
+        header_row = ['Roll', 'Student Name']
+        for record in record_data:
+            if num_records > 30:
+                date_str = record['date'].strftime('%d/%m')
+            elif num_records > 20:
+                date_str = record['date'].strftime('%d/%m/%y')
+            else:
+                date_str = record['date'].strftime('%d/%m/%Y')
+            header_row.append(date_str)
+        header_row.append('%')
+        table_data.append(header_row)
+
         for student in student_data:
-            row = [student['roll_no'], student['name']] + student['attendance'] + [f"{student['percentage']}%"]
+            student_name = student['name']
+            if num_records > 30:
+                if len(student_name) > 15:
+                    student_name = student_name[:12] + "..."
+            elif num_records > 20:
+                if len(student_name) > 20:
+                    student_name = student_name[:17] + "..."
+            
+            attendance_data = []
+            for status in student['attendance']:
+                if num_records > 30:
+                    attendance_data.append('P' if status == 'present' else 'A')
+                else:
+                    attendance_data.append(status)
+            
+            row = [student['roll_no'], student_name] + attendance_data + [f"{student['percentage']}%"]
             table_data.append(row)
 
-        col_widths = [0.8*inch, 2.5*inch] + [0.9*inch]*len(record_data) + [1*inch]
+        col_widths = [roll_no_width, name_width] + [date_col_width]*num_records + [percentage_width]
+        
         table = Table(table_data, colWidths=col_widths)
-        table.setStyle(TableStyle([
+        
+        table_style = [
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A8A')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('TOPPADDING', (0, 0), (-1, 0), 10),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, 0), header_font_size),
+            ('FONTSIZE', (0, 1), (-1, -1), font_size),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#F3F4F6'), colors.white]),
-        ]))
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.HexColor('#F8F9FA'), colors.white]),
+        ]
+        
+        if font_size <= 6:
+            table_style.extend([
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+            ])
+        elif font_size <= 8:
+            table_style.extend([
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ])
+        else:
+            table_style.extend([
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                ('TOPPADDING', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+            ])
+        
+        table.setStyle(TableStyle(table_style))
         elements.append(table)
+
+        if num_records > 30:
+            legend_style = ParagraphStyle(
+                'LegendStyle',
+                parent=styles['Normal'],
+                fontSize=8,
+                leading=10,
+                textColor=colors.HexColor('#6B7280'),
+                spaceAfter=5,
+                alignment=1
+            )
+            elements.append(Spacer(1, 0.1*inch))
+            elements.append(Paragraph("Legend: P = Present, A = Absent", legend_style))
 
         def add_page_number(canvas, doc):
             page_num = canvas.getPageNumber()
-            canvas.setFont("Helvetica", 9)
+            canvas.setFont("Helvetica", 8)
             canvas.setFillColor(colors.grey)
-            canvas.drawCentredString(landscape(A4)[0]/2, 0.5*inch, f"Page {page_num}")
-            canvas.setFont("Helvetica-Oblique", 8)
+            canvas.drawCentredString(landscape(LEGAL)[0]/2, 0.4*inch, f"Page {page_num}")
+            canvas.setFont("Helvetica-Oblique", 7)
             canvas.setFillColor(colors.grey)
-            canvas.drawCentredString(landscape(A4)[0]/2, 0.35*inch, "This is a system-generated report.")
+            canvas.drawCentredString(landscape(LEGAL)[0]/2, 0.25*inch, "This is a system-generated report and can not be used for official purposes.")
+            
             canvas.saveState()
-            canvas.setFont("Helvetica-Bold", 60)
-            canvas.setFillColor(colors.grey, alpha=0.1)
+            canvas.setFont("Helvetica-Bold", 40)
+            canvas.setFillColor(colors.grey, alpha=0.05)
             canvas.rotate(45)
-            canvas.drawCentredString(5*inch, -1*inch, "AttendXMark")
+            canvas.drawCentredString(4*inch, -1*inch, "AttendXMark")
             canvas.restoreState()
 
         doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
@@ -195,16 +281,13 @@ def student_attendance_report(request, lecture_id):
 
     context = {
         'lecture': lecture,
-        'record_data': record_data,  # Updated to pass record_data instead of dates
+        'record_data': record_data,
         'student_data': student_data,
     }
     return render(request, 'reports/student_attendance_report.html', context)
 
-@login_required
+@teacher_required
 def delete_attendance(request, lecture_id, attendance_record_id):
-    if not request.user.is_teacher:
-        return render(request, 'attendance/access_denied.html', status=403)
-
     lecture = get_object_or_404(Lecture, pk=lecture_id)
     if lecture.teacher != request.user:
         return render(request, 'attendance/access_denied.html', status=403)
@@ -215,11 +298,11 @@ def delete_attendance(request, lecture_id, attendance_record_id):
     messages.success(request, f"Attendance record for {record_date} deleted successfully.")
     return redirect('student_attendance_report', lecture_id=lecture_id)
 
-
-@login_required
+@teacher_required
 def teacher_lectures_report(request):
-    if not request.user.is_teacher:
-        return render(request, 'attendance/access_denied.html', status=403)
-
-    lectures = Lecture.objects.filter(teacher=request.user, lecture_class__isnull=False).order_by("start_time")
+    lectures = Lecture.objects.filter(
+        teacher=request.user,
+        lecture_class__isnull=False,
+        status='active'
+    ).order_by("start_time")
     return render(request, 'reports/teacher_lectures_report.html', {'lectures': lectures, 'user': request.user})

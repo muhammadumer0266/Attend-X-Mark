@@ -315,3 +315,21 @@ class PasswordResetOTP(models.Model):
 
     def __str__(self):
         return f"OTP for {self.user.username} - {self.otp}"
+    
+# Add this new model to your existing models.py file
+
+class PersonalInfoOTP(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    email = models.EmailField()  # The email where OTP was sent
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Personal Info OTP for {self.user.username} - {self.otp}"
+
+    def is_expired(self):
+        from django.utils import timezone
+        time_diff = timezone.now() - self.created_at
+        return time_diff.total_seconds() > 600  # 10 minutes expiry

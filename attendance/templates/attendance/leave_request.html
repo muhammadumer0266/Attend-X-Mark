@@ -10,15 +10,15 @@
             <form method="POST" class="needs-validation" novalidate>
                 {% csrf_token %}
                 <div class="row">
-                    <!-- Left Column: Subject, Teacher, Leave Date -->
+                    <!-- Left Column: Subject, Lecture, Leave Date -->
                     <div class="col-lg-6">
                         <div class="mb-4">
                             <label for="id_subject" class="form-label">Subject</label>
                             {{ form.subject }}
                         </div>
                         <div class="mb-4">
-                            <label for="id_teacher" class="form-label">Teacher</label>
-                            {{ form.teacher }}
+                            <label for="id_lecture" class="form-label">Lecture</label>
+                            {{ form.lecture }}
                         </div>
                         <div class="mb-4">
                             <label for="id_leave_date" class="form-label">Leave Date</label>
@@ -62,7 +62,7 @@
         background: #ffffff;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         width: 100%;
-        max-width: 800px; /* Increased to accommodate two columns */
+        max-width: 800px;
         margin: auto;
         overflow: hidden;
         transition: transform 0.3s ease;
@@ -114,7 +114,7 @@
         padding: 15px;
         width: 100%;
         font-size: 1rem;
-        min-height: 300px; /* Increased to fill column height */
+        min-height: 300px;
         resize: none;
         background: #fff;
         transition: all 0.3s ease;
@@ -125,7 +125,7 @@
         outline: none;
     }
     .description-container {
-        height: 100%; /* Ensure the container fills the column */
+        height: 100%;
         display: flex;
         flex-direction: column;
     }
@@ -212,7 +212,6 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(93, 139, 194, 0.4);
     }
-    /* Responsive Adjustments */
     @media (max-width: 991px) {
         .leave-card {
             width: 90%;
@@ -231,7 +230,7 @@
             width: 100%;
         }
         textarea {
-            min-height: 150px; /* Reduced for mobile */
+            min-height: 150px;
         }
     }
 </style>
@@ -244,12 +243,9 @@
 
 <script>
     $(document).ready(function () {
-        // Get today's date dynamically
         var today = new Date();
         var minDate = new Date(today);
-        // Add 2 days to today's date
         minDate.setDate(today.getDate() + 2);
-        // Format the date to YYYY-MM-DD
         var minDateFormatted = minDate.toISOString().split('T')[0];
         
         $('#id_leave_date').datepicker({

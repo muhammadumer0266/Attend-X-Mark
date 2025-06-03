@@ -84,6 +84,8 @@ from django.contrib.auth.forms import AuthenticationForm
 class CustomAuthenticationForm(AuthenticationForm):
     captcha = ReCaptchaField()
 
+# Update your existing TeacherAdditionalInfoForm and StudentAdditionalInfoForm
+
 # Form for Teacher additional information
 class TeacherAdditionalInfoForm(forms.ModelForm):
     contact_number = PhoneNumberField(
@@ -98,10 +100,20 @@ class TeacherAdditionalInfoForm(forms.ModelForm):
         widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
         required=False
     )
+    otp = forms.CharField(
+        max_length=6,
+        widget=forms.TextInput(attrs={
+            'class': 'personal-info-input-text',
+            'placeholder': 'Enter OTP',
+            'disabled': True
+        }),
+        required=False,
+        label='OTP'
+    )
 
     class Meta:
         model = Teacher
-        fields = ['profile_picture', 'email', 'designation', 'department', 'office_room_number', 'specialization', 'contact_number']
+        fields = ['profile_picture', 'email', 'designation', 'department', 'office_room_number', 'specialization', 'contact_number', 'otp']
         widgets = {
             'designation': forms.Select(attrs={'class': 'personal-info-select'}),
             'department': forms.Select(attrs={'class': 'personal-info-select'}),
@@ -138,10 +150,20 @@ class StudentAdditionalInfoForm(forms.ModelForm):
         widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
         required=False
     )
+    otp = forms.CharField(
+        max_length=6,
+        widget=forms.TextInput(attrs={
+            'class': 'personal-info-input-text',
+            'placeholder': 'Enter OTP',
+            'disabled': True
+        }),
+        required=False,
+        label='OTP'
+    )
 
     class Meta:
         model = Student
-        fields = ['profile_picture', 'email', 'contact_number', 'roll_no', 'degree_level', 'discipline', 'semester', 'shift', 'section']
+        fields = ['profile_picture', 'email', 'contact_number', 'roll_no', 'degree_level', 'discipline', 'semester', 'shift', 'section', 'otp']
         widgets = {
             'roll_no': forms.TextInput(
                 attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter roll number'}

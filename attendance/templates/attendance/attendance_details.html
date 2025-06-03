@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Attendance Details{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center mb-5 text-2xl font-bold text-gray-800 bg-gradient-to-r from-blue-100 to-white p-3 rounded-lg shadow-md">{{ course.code }} - {{ semester.name }} Attendance</h2>
+  <div class="bg-white p-4 rounded-lg shadow-lg">
+    <table class="table w-full text-center">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-2 text-gray-700 font-semibold">Date</th>
+          <th class="p-2 text-gray-700 font-semibold">Status</th>
+          <th class="p-2 text-gray-700 font-semibold">Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in attendance_records %}
+        <tr class="hover:bg-gray-50 transition duration-200">
+          <td class="p-2">{{ record.attendance_record.date|date:'d/m/Y' }}</td>
+          <td class="p-2">{{ record.attendance_status |capfirst }}</td>
+          <td class="p-2">{% if record.attendance_record.is_makeup_class %}Makeup{% else %}Regular{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="p-2 text-gray-500">No attendance records found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="text-center mt-4">
+    <a href="{% url 'student_attendance' %}" class="btn bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-300">Back</a>
+  </div>
+</div>
+<style>
+  @media (max-width: 640px) {
+    table { font-size: 0.9rem; }
+    th, td { padding: 0.5rem; }
+    .btn { width: 100%; }
+  }
+</style>
+{% endblock %}

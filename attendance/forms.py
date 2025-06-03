@@ -1,19 +1,14 @@
 from django import forms
-from .models import Leave
-from accounts.models import Student
+from .models import Leave, Attendance
 from django.forms import modelformset_factory
 
 class LeaveForm(forms.ModelForm):
     class Meta:
         model = Leave
-        fields = ['subject', 'body', 'leave_date', 'teacher']
+        fields = ['subject', 'body', 'leave_date', 'lecture']
         widgets = {
             'leave_date': forms.DateInput(attrs={'type': 'date'}),
         }
-
-from django import forms
-from .models import Attendance
-from accounts.models import Student
 
 class AttendanceForm(forms.ModelForm):
     ATTENDANCE_CHOICES = [
@@ -29,13 +24,15 @@ class AttendanceForm(forms.ModelForm):
 
     class Meta:
         model = Attendance
-        fields = ['attendance_status']
+        fields = ['student', 'attendance_status']  # Include 'student' in fields
         widgets = {
             'student': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if 'attendance_status' in self.initial:
+            self.fields['attendance_status'].initial = self.initial['attendance_status']
         if self.instance.pk:
             self.fields['attendance_status'].initial = self.instance.attendance_status
 
@@ -53,7 +50,7 @@ class AttendanceEditForm(forms.ModelForm):
 
     class Meta:
         model = Attendance
-        fields = ['attendance_status']
+        fields = ['student', 'attendance_status', 'attendance_record']  # Include 'student' and 'attendance_record'
         widgets = {
             'student': forms.HiddenInput(),
             'attendance_record': forms.HiddenInput(),

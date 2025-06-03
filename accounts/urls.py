@@ -20,6 +20,7 @@ urlpatterns = [
     path('unblock-device/', views.unblock_device_request, name='unblock_device_request'),
     path('unblock-device/verify/', views.unblock_device_verify, name='unblock_device_verify'),
     path('offline/', views.offline, name='offline'),
+    path('generate-personal-info-otp/', views.generate_personal_info_otp, name='generate_personal_info_otp'),
     
 ]
 if settings.DEBUG:

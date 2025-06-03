@@ -1,17 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-    /* General form styling */
     .attendance-form {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 2rem auto;
         padding: 1.5rem;
         background-color: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-
-    /* Heading styling */
     .attendance-form h2 {
         text-align: center;
         color: #333;
@@ -19,196 +16,95 @@
         font-size: 1.8rem;
         font-weight: 600;
     }
-
-    /* Table styling */
-    .attendance-form table {
-        width: 100%;
-        border-collapse: collapse;
+    .attendance-form h3 {
+        text-align: center;
+        color: #28a745;
         margin-bottom: 1.5rem;
+        font-size: 1.5rem;
     }
-
-    .attendance-form th,
-    .attendance-form td {
-        padding: 0.75rem;
-        text-align: left;
-        border-bottom: 1px solid #e0e0e0;
-    }
-
-    .attendance-form th {
-        background-color: #f5f5f5;
-        color: #333;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.9rem;
-    }
-
-    .attendance-form td {
-        color: #555;
-        font-size: 1rem;
-    }
-
-    /* Zebra striping for rows */
-    .attendance-form tr:nth-child(even) {
-        background-color: #fafafa;
-    }
-
-    /* Hover effect for rows */
-    .attendance-form tr:hover {
-        background-color: #f0f0f0;
-    }
-
-    /* Button styling */
-    .attendance-form button {
+    .attendance-form a {
         display: block;
-        width: 100%;
-        padding: 0.75rem;
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 4px;
+        text-align: center;
+        margin-top: 1.5rem;
+        color: #007bff;
+        text-decoration: none;
         font-size: 1rem;
         font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.3s;
     }
-
-    .attendance-form button:hover {
-        background-color: #0056b3;
+    .attendance-form a:hover {
+        text-decoration: underline;
     }
-
-    .attendance-form button:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    .annotated-image {
+        max-width: 100%;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
     }
-
-    /* Custom radio button styling */
-    .radio-group {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .radio-label {
-        display: inline-block;
-        position: relative;
-        padding: 0.5rem 1.5rem;
-        background-color: #f1f3f5;
+    .recognized-list {
+        margin-top: 1rem;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 8px;
         border: 1px solid #e0e0e0;
-        border-radius: 20px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        color: #333;
-        transition: all 0.3s ease;
-        user-select: none;
-        text-align: center;
-        min-width: 80px;
     }
-
-    .radio-label:hover {
-        background-color: #e9ecef;
-        border-color: #ced4da;
-    }
-
-    /* Hide the actual radio input */
-    input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    /* Style for checked state */
-    input[type="radio"]:checked + .radio-label {
-        background-color: #007bff;
-        color: #fff;
-        border-color: #007bff;
-        box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
-    }
-
-    /* Different colors for different statuses */
-    input[value="present"]:checked + .radio-label {
-        background-color: #28a745;
-        border-color: #28a745;
-    }
-
-    input[value="absent"]:checked + .radio-label {
-        background-color: #dc3545;
-        border-color: #dc3545;
-    }
-
-    input[value="leave"]:checked + .radio-label {
-        background-color: #ffc107;
-        border-color: #ffc107;
+    .recognized-list h4 {
+        margin-bottom: 0.5rem;
         color: #333;
     }
-
-    /* Focus state for accessibility */
-    input[type="radio"]:focus + .radio-label {
-        outline: 2px solid #007bff;
-        outline-offset: 2px;
+    .recognized-list ul {
+        list-style-type: none;
+        padding-left: 0;
     }
-
-    /* Responsive design */
+    .recognized-list li {
+        padding: 0.25rem 0;
+        color: #555;
+    }
     @media (max-width: 600px) {
         .attendance-form {
             padding: 1rem;
         }
-
         .attendance-form h2 {
             font-size: 1.5rem;
         }
-
-        .attendance-form th,
-        .attendance-form td {
+        .attendance-form h3 {
+            font-size: 1.2rem;
+        }
+        .attendance-form a {
+            font-size: 0.9rem;
+        }
+        .annotated-image {
+            max-width: 100%;
+        }
+        .recognized-list {
             padding: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .radio-label {
-            padding: 0.4rem 1.2rem;
-            font-size: 0.8rem;
-            min-width: 70px;
-        }
-
-        .attendance-form button {
-            padding: 0.6rem;
-            font-size: 0.9rem;
         }
     }
 </style>
 
 <div class="attendance-form">
-    <h2>Mark Attendance for {{ lecture.course.code }} on {{ date }}</h2>
+    <h2>Attendance for {{ lecture.course.code }} on {{ date }}{% if is_makeup_class %} (Makeup Class){% endif %}</h2>
 
-    <form method="post" class="attendance-form">
-        {% csrf_token %}
-        {{ formset.management_form }}
-        <table>
-            <thead>
-                <tr>
-                    <th>Student</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for form in formset %}
-                    <tr>
-                        <td>{{ form.instance.student }}</td>
-                        <td>
-                            <div class="radio-group">
-                                {% for radio in form.attendance_status %}
-                                    {{ radio.tag }}
-                                    <label class="radio-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
-                                {% endfor %}
-                            </div>
-                        </td>
-                        {{ form.student }}
-                        {{ form.id }}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit">Save Attendance</button>
-    </form>
+    {% if annotated_image %}
+        <img src="data:image/jpeg;base64,{{ annotated_image }}" alt="Recognized Faces" class="annotated-image">
+        {% if recognized_users %}
+            <div class="recognized-list">
+                <h4>Recognized Students:</h4>
+                <ul>
+                    {% for user in recognized_users %}
+                        <li>{{ user.name }} (Roll No: {{ user.roll_no }})</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <div class="recognized-list">
+                <p>No students recognized in the image.</p>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if attendance_marked %}
+        <h3>Attendance has been marked successfully!</h3>
+        <p>Recognized students have been marked as <strong>Present</strong>, and others as <strong>Absent</strong>.</p>
+        <a href="{% url 'lecture_list' %}">Back to Lecture List</a>
+    {% endif %}
 </div>
 {% endblock %}

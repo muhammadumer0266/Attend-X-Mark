@@ -213,4 +213,8 @@ Scripts\activate
 - Docker/Redis errors: confirm port `6379` is free and container is running:  
   ```bash
   docker ps
+<<<<<<< HEAD
   ```
+=======
+  ```
+>>>>>>> 4e4dedbfca50948abf6d39f46791a59c50e1aa0c

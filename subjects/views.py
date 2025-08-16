@@ -43,7 +43,6 @@ def course_list(request):
             'lectures': lectures,
         })
     except Student.DoesNotExist:
-        messages.error(request, "Student profile not found.")
         return render(request, 'subjects/course_list.html', {
             'semester': None,
             'lectures': [],

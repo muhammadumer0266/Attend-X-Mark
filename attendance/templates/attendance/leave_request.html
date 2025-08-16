@@ -7,6 +7,15 @@
             <h2><i class="fas fa-feather-alt"></i> Request Leave</h2>
         </div>
         <div class="card-body leave-body">
+            <!-- Messages Section -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
             <form method="POST" class="needs-validation" novalidate>
                 {% csrf_token %}
                 <div class="row">
@@ -15,10 +24,16 @@
                         <div class="mb-4">
                             <label for="id_subject" class="form-label">Subject</label>
                             {{ form.subject }}
+                            {% if form.subject.errors %}
+                                <div class="text-danger small">{{ form.subject.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="mb-4">
                             <label for="id_lecture" class="form-label">Lecture</label>
                             {{ form.lecture }}
+                            {% if form.lecture.errors %}
+                                <div class="text-danger small">{{ form.lecture.errors }}</div>
+                            {% endif %}
                         </div>
                         <div class="mb-4">
                             <label for="id_leave_date" class="form-label">Leave Date</label>
@@ -27,6 +42,9 @@
                                 <span class="input-group-icon"><i class="fas fa-calendar-alt"></i></span>
                             </div>
                             <small class="form-text text-muted">Select a date starting from 2 days ahead.</small>
+                            {% if form.leave_date.errors %}
+                                <div class="text-danger small">{{ form.leave_date.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
                     <!-- Right Column: Description -->
@@ -36,6 +54,9 @@
                             <div class="textarea-container">
                                 {{ form.body }}
                             </div>
+                            {% if form.body.errors %}
+                                <div class="text-danger small">{{ form.body.errors }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -50,8 +71,6 @@
 
 <style>
     body {
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(145deg, #f0f4f8, #e0e7ff);
         min-height: 100vh;
         justify-content: center;
         align-items: center;
@@ -212,6 +231,30 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(93, 139, 194, 0.4);
     }
+    .alert {
+        margin-bottom: 20px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+    }
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border-color: #ffeeba;
+    }
+    .text-danger {
+        font-size: 0.85rem;
+        margin-top: 5px;
+    }
     @media (max-width: 991px) {
         .leave-card {
             width: 90%;
@@ -229,7 +272,7 @@
         .col-lg-6 {
             width: 100%;
         }
-        textarea {
+        .textarea-container textarea {
             min-height: 150px;
         }
     }

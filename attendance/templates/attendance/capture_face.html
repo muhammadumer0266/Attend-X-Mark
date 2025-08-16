@@ -5,94 +5,188 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .fade-in {
-        animation: fadeIn 0.5s ease-in-out;
+    .fade-in { animation: fadeIn 0.6s ease-in-out; }
+
+    .card-modern {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(29, 53, 87, 0.15);
+        background: #fff;
     }
-    .btn-custom {
-        background-color: #0C4B33;
-        border-color: #0C4B33;
-        color: #FFFFFF;
-        font-family: 'Poppins', sans-serif;
+    .card-header-gradient {
+        background: linear-gradient(135deg, #457b9d, #1d3557);
+        color: #fff;
+        padding: 25px;
+        text-align: center;
+    }
+    .btn-theme {
+        background: linear-gradient(135deg, #457b9d, #1d3557);
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        border-radius: 50px;
+        padding: 12px 28px;
         transition: all 0.3s ease;
     }
-    .btn-custom:hover {
-        background-color: #44B78B;
-        border-color: #44B78B;
+    .btn-theme:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 20px rgba(29, 53, 87, 0.3);
     }
-    .card {
-        border: none;
+
+    .file-upload {
+        position: relative;
+        display: inline-block;
+        width: 75%;
+        max-width: 400px;
+        margin: 20px auto;
+    }
+    .file-upload input[type="file"] {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+    .file-upload-label {
+        display: block;
+        background: #f1f5f9;
+        border: 2px dashed #457b9d;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        padding: 14px;
+        text-align: center;
+        color: #1d3557;
+        font-weight: 500;
+        transition: all 0.3s ease;
     }
-    .form-control-file {
-        font-family: 'Montserrat', sans-serif;
-        border-radius: 8px;
-        padding: 10px;
-        background-color: #C9F0DD;
-        color: #0C4B33;
+    .file-upload-label:hover {
+        background: #e9eef5;
+    }
+
+    .image-preview-container {
+        position: relative;
+        display: inline-block;
+        max-width: 120px;
+        margin: 8px;
     }
     .image-preview {
-        max-width: 200px;
-        margin: 10px;
-        border-radius: 8px;
+        max-width: 120px;
+        border-radius: 12px;
+        border: 2px solid #f1f5f9;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: transform 0.2s ease;
+    }
+    .image-preview:hover {
+        transform: scale(1.05);
+    }
+    .delete-icon {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #c3c7caff;
+        color: #1d3557;
+        border-radius: 50%;
+        width: 20px;
+        box-shadow: 0 2px 5px white;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: transform 0.2s ease;
+    }
+    .delete-icon:hover {
+        transform: scale(1.1);
+    }
+
+    @media (max-width: 991px) {
+        .file-upload, #image-files, #upload-form button[type="submit"] {
+            display: none;
+        }
+        #mobile-camera-section {
+            display: flex !important;
+        }
+        #webcam-section {
+            display: none !important;
+        }
+        #capture {
+            display: none;
+        }
+        .btn-theme.fs-5 {
+            font-size: 14px !important;
+        }
     }
 </style>
 
 <div class="container min-vh-100 d-flex align-items-center justify-content-center py-5">
-    <div class="card p-5 w-100 fade-in" style="max-width: 800px;">
-        <h2 class="text-center mb-3 fw-bold fs-2" style="font-family: 'Poppins', sans-serif; color: #0C4B33;">
-            Capture Faces for {{ lecture.course }}
-        </h2>
-        <p class="text-center text-muted mb-5" style="font-family: 'Montserrat', sans-serif;">
-            Class: {{ lecture.lecture_class }}{% if is_makeup_class %} (Makeup Class){% endif %}
-        </p>
-
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    <p style="font-family: 'Montserrat', sans-serif;">{{ message }}</p>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <!-- Upload Images Section -->
-        <div class="border-top pt-5">
-            <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
-                Upload Images for Face Recognition
-            </h3>
-            <form method="post" enctype="multipart/form-data" action="{% url 'capture_face' lecture.lecture_id %}" id="upload-form" class="d-flex flex-column align-items-center">
-                {% csrf_token %}
-                <input type="file" name="image_files" accept="image/*" multiple class="form-control-file mb-4 w-75" id="image-files" required>
-                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
-                <button type="submit" class="btn btn-custom px-5 py-2 fs-5">Upload and Recognize</button>
-            </form>
-            <div id="preview-container" class="d-flex flex-wrap justify-content-center mt-3"></div>
+    <div class="card-modern w-100 fade-in" style="max-width: 850px;">
+        
+        <!-- Header -->
+        <div class="card-header-gradient">
+            <h2 class="fw-bold fs-2" style="font-family: 'Poppins', sans-serif;">
+                📸 Capture Faces for {{ lecture.course }}
+            </h2>
+            <p class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 15px;">
+                Class: {{ lecture.lecture_class }}{% if is_makeup_class %} (Makeup Class){% endif %}
+            </p>
         </div>
 
-        <!-- Camera Capture Section -->
-        <div class="mb-5">
-            <h3 class="text-center mb-4 fw-semibold fs-4" style="font-family: 'Montserrat', sans-serif; color: #0C4B33;">
+        <div class="p-5">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <p style="font-family: 'Montserrat', sans-serif;">{{ message }}</p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Camera Section -->
+            <h3 class="text-center mb-4 fw-semibold fs-4" style="color: #1d3557; font-family: 'Montserrat', sans-serif;">
                 Capture from Camera
             </h3>
             <div id="webcam-section" class="d-flex justify-content-center">
                 <video id="video" class="rounded border border-secondary" width="640" height="480" autoplay></video>
             </div>
             <div id="mobile-camera-section" class="d-none d-flex justify-content-center">
-                <input type="file" id="mobile-camera" accept="image/*" capture="environment" multiple class="form-control-file w-75">
+                <button id="mobile-capture-button" class="btn-theme fs-5">Open Camera</button>
+                <input type="file" id="mobile-camera" accept="image/*" capture="environment" multiple class="d-none">
             </div>
+            <div id="preview-container" class="d-flex flex-wrap justify-content-center mt-4"></div>
             <canvas id="canvas" width="640" height="480" class="d-none"></canvas>
             <div class="d-flex justify-content-center mt-4 gap-3">
-                <button id="capture" class="btn btn-custom px-5 py-2 fs-5">Capture Image</button>
-                <button id="add-to-upload" class="btn btn-custom px-5 py-2 fs-5 d-none">Add to Upload</button>
+                <button id="capture" class="btn-theme fs-5">Capture Image</button>
+                <button id="add-to-upload" class="btn-theme fs-5 d-none">Process the captured images</button>
             </div>
-        </div>
 
-        <!-- Back to Lectures -->
-        <div class="d-flex justify-content-center mt-5">
-            <a href="{% url 'lecture_list' %}" class="btn btn-custom px-5 py-2 fs-5">Back to Lectures</a>
+            <!-- Modern Select Images -->
+            <form method="post" enctype="multipart/form-data" 
+                  action="{% url 'capture_face' lecture.lecture_id %}" 
+                  id="upload-form" class="d-flex flex-column align-items-center mt-5">
+                {% csrf_token %}
+                <div class="file-upload">
+                    <label for="image-files" class="file-upload-label">
+                        📂 Click to Select Images
+                    </label>
+                    <input type="file" name="image_files" accept="image/*" multiple id="image-files" required>
+                </div>
+                <input type="hidden" name="is_makeup_class" value="{{ is_makeup_class|yesno:'true,false' }}">
+                <button type="submit" class="btn-theme fs-5 mt-3">Process the uploaded images</button>
+            </form>
+
+            <!-- Note -->
+            <p class="text-center mt-3" style="color: #1d3557; font-family: 'Montserrat', sans-serif; font-size: 14px;">
+                Please capture images in landscape mode.
+            </p>
+
+            <!-- Back -->
+            <div class="d-flex justify-content-center mt-5">
+                <a href="{% url 'lecture_list' %}" class="btn-theme fs-5" style="font-size: 14px;">⬅ Back to Lectures</a>
+            </div>
         </div>
     </div>
 </div>
@@ -106,26 +200,59 @@
     const webcamSection = document.getElementById('webcam-section');
     const mobileCameraSection = document.getElementById('mobile-camera-section');
     const mobileCameraInput = document.getElementById('mobile-camera');
+    const mobileCaptureButton = document.getElementById('mobile-capture-button');
     const imageFilesInput = document.getElementById('image-files');
     const previewContainer = document.getElementById('preview-container');
     let capturedImages = [];
 
-    if (isMobile) {
+    function createImagePreview(src, fileIndex) {
+        const container = document.createElement('div');
+        container.className = 'image-preview-container';
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'image-preview';
+        const deleteIcon = document.createElement('span');
+        deleteIcon.className = 'delete-icon';
+        deleteIcon.innerHTML = '✕';
+        deleteIcon.onclick = () => {
+            container.remove();
+            capturedImages.splice(fileIndex, 1);
+            updateFileInput();
+            if (capturedImages.length === 0) {
+                addToUploadButton.classList.add('d-none');
+            }
+        };
+        container.appendChild(img);
+        container.appendChild(deleteIcon);
+        previewContainer.appendChild(container);
+    }
+
+    function updateFileInput() {
+        const dataTransfer = new DataTransfer();
+        capturedImages.forEach(dataUrl => {
+            fetch(dataUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    dataTransfer.items.add(new File([blob], `capture_${capturedImages.indexOf(dataUrl)}.jpg`, { type: 'image/jpeg' }));
+                    imageFilesInput.files = dataTransfer.files;
+                });
+        });
+    }
+
+    if (window.innerWidth <= 991 || isMobile) {
         webcamSection.classList.add('d-none');
         mobileCameraSection.classList.remove('d-none');
-        captureButton.addEventListener('click', () => {
+        mobileCaptureButton.addEventListener('click', () => {
             mobileCameraInput.click();
         });
         mobileCameraInput.addEventListener('change', () => {
             const files = mobileCameraInput.files;
             if (files.length > 0) {
-                Array.from(files).forEach(file => {
+                Array.from(files).forEach((file, index) => {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'image-preview';
-                        previewContainer.appendChild(img);
+                        capturedImages.push(e.target.result);
+                        createImagePreview(e.target.result, capturedImages.length - 1);
                     };
                     reader.readAsDataURL(file);
                 });
@@ -151,11 +278,8 @@
             const context = canvas.getContext('2d');
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL('image/jpeg');
-            const img = document.createElement('img');
-            img.src = imageData;
-            img.className = 'image-preview';
-            previewContainer.appendChild(img);
             capturedImages.push(imageData);
+            createImagePreview(imageData, capturedImages.length - 1);
             addToUploadButton.classList.remove('d-none');
         });
         addToUploadButton.addEventListener('click', () => {

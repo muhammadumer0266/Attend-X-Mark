@@ -13,5 +13,6 @@ urlpatterns = [
     path('capture/<int:lecture_id>/', views.capture_face, name='capture_face'),
     path('', views.student_attendance, name='student_attendance'),
     path('attendance/<int:semester_id>/<int:course_id>/', views.attendance_details, name='attendance_details'),
+    path('verify-face/', views.verify_face, name='verify_face'),
     path('lectures/<int:lecture_id>/edit/<int:attendance_record_id>/', views.edit_attendance, name='edit_attendance'),
 ]

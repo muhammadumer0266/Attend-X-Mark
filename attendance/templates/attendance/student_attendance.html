@@ -2,34 +2,34 @@
 {% load custom_filters %}
 {% block title %}My Attendance{% endblock %}
 {% block content %}
-<div class="container mt-5">
-  <h2 class="text-center mb-5 text-3xl font-bold text-gray-800 shadow-md p-3 bg-gradient-to-r from-blue-100 to-white rounded-lg">My Attendance</h2>
+<div class="attendance-container">
+  <h2 class="attendance-title">My Attendance</h2>
   {% if degree_completed %}
-    <div class="alert alert-success text-center text-xl font-semibold bg-green-100 border border-green-400 text-green-800 p-4 rounded-lg shadow-lg">
+    <div class="completion-message">
       Congratulations! You have successfully completed your degree.
     </div>
   {% else %}
-    <ul class="nav nav-tabs flex justify-center space-x-2 bg-gradient-to-r from-blue-50 to-white p-2 rounded-lg shadow-md" id="semesterTabs" role="tablist">
+    <ul class="semester-nav" id="semesterNav">
       {% for semester in semesters %}
-      <li class="nav-item" role="presentation">
-        <button class="nav-link px-4 py-2 text-sm font-medium text-gray-700 hover:bg-blue-200 hover:text-blue-800 rounded-md transition duration-300 {% if forloop.first %}active bg-blue-200 text-blue-800{% endif %}" id="semester-{{ semester.id }}-tab" data-bs-toggle="tab" data-bs-target="#semester-{{ semester.id }}" type="button" role="tab" aria-controls="semester-{{ semester.id }}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}">{{ semester.name }}</button>
+      <li class="sem-item">
+        <button class="sem-link {% if forloop.first %}active{% endif %}" data-tab="sem-pane-{{ semester.id }}">{{ semester.name }}</button>
       </li>
       {% endfor %}
     </ul>
-    <div class="tab-content mt-5 bg-white p-4 rounded-lg shadow-lg">
+    <div class="sem-content">
       {% for semester in semesters %}
-      <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="semester-{{ semester.id }}" role="tabpanel" aria-labelledby="semester-{{ semester.id }}-tab">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="sem-pane {% if forloop.first %}active{% endif %}" id="sem-pane-{{ semester.id }}">
+        <div class="course-grid">
           {% for course in attendance_data|get_item:semester.name %}
-          <div class="card bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition duration-300">
-            <div class="card-body p-4">
-              <h5 class="card-title text-lg font-semibold text-gray-800">{{ course.code }} - {{ course.title }}</h5>
-              <p class="card-text text-gray-600">Credit Hours: {{ course.credit_hours }}</p>
-              <a href="{% url 'attendance_details' semester.id course.id %}" class="btn btn-primary bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700 transition duration-300">View Details</a>
+          <div class="course-card">
+            <div class="card-body">
+              <h5 class="card-title">{{ course.code }} - {{ course.title }}</h5>
+              <p class="card-text">Credit Hours: {{ course.credit_hours }}</p>
+              <a href="{% url 'attendance_details' semester.id course.id %}" class="card-btn">View Details</a>
             </div>
           </div>
           {% empty %}
-          <p class="text-center text-gray-500">No courses available for {{ semester.name }}.</p>
+          <p class="no-courses">No courses available for {{ semester.name }}.</p>
           {% endfor %}
         </div>
       </div>
@@ -38,14 +38,175 @@
   {% endif %}
 </div>
 <style>
+  .attendance-container {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+  .attendance-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .completion-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 24px;
+  }
+  .semester-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    justify-content: center;
+    list-style: none;
+    margin-bottom: 24px;
+  }
+  .sem-item {
+    flex: none;
+  }
+  .sem-link {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4b5563;
+    background: #f3f4f6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+  .sem-link:hover {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .sem-link.active {
+    background: #e0e7ff;
+    color: #3730a3;
+  }
+  .sem-content {
+    background: #ffffff;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .sem-pane {
+    display: none;
+  }
+  .sem-pane.active {
+    display: block;
+  }
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .course-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+  }
+  .course-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  .card-body {
+    padding: 16px;
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+  .card-text {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
+  .card-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #457b9d;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .card-btn:hover {
+    background: #3a6a85;
+  }
+  .no-courses {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    grid-column: 1 / -1;
+  }
   @media (max-width: 640px) {
-    .grid-cols-1 { grid-template-columns: 1fr; }
-    .nav-tabs { flex-direction: column; align-items: center; }
-    .nav-link { width: 100%; margin-bottom: 0.5rem; }
-    .card-body { padding: 1rem; }
+    .semester-nav {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .sem-link {
+      width: 100%;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+    }
+    .course-grid {
+      grid-template-columns: 1fr;
+    }
+    .attendance-title {
+      font-size: 24px;
+    }
   }
   @media (min-width: 641px) and (max-width: 1024px) {
-    .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+    .semester-nav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .sem-link {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+    }
+    .course-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 1025px) {
+    .semester-nav { display: flex; }
+    .sem-item { flex: none; }
   }
 </style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.sem-link');
+    const panes = document.querySelectorAll('.sem-pane');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+  });
+</script>
 {% endblock %}

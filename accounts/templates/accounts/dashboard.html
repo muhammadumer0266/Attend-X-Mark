@@ -26,7 +26,7 @@
                         <a href="{% url 'student_attendance' %}"  class="btn action-btn text-white fw-bold" 
                                 style="background: #2980b9; border-radius: 10px; padding: 12px 25px;">
                             <i class="fas fa-list me-2"></i>View Attendance
-                    </a>
+                        </a>
                         {% endif %}
                     </div>
                 </div>
@@ -39,12 +39,12 @@
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
                          style="animation-delay: 0.2s; border-radius: 15px; background: linear-gradient(135deg, #2ecc71, #27ae60);">
                         <div class="card-body text-white p-4">
-                            <h5 class="card-title fw-bold">Today's Attendance</h5>
-                            <p class="display-5 fw-bold mb-0 count-up" data-target="85" data-suffix="%">0</p>
+                            <h5 class="card-title fw-bold">Semester Attendance</h5>
+                            <p class="display-5 fw-bold mb-0 count-up" data-target="{{ overall_attendance_percentage }}" data-suffix="%">0</p>
                             <small>Updated: {{ current_date|default:"February 28, 2025" }}</small>
                         </div>
                     </div>
-                 </a>
+                </a>
                 </div>
                 {% endif %}
                 <div class="col-md-6"><a href="#techer-section" style="text-decoration:none;">
@@ -60,7 +60,7 @@
                 </div>
                 
                 {% if request.user.is_teacher %}
-                 <div class="col-md-6"><a href="{% url 'leave_list' %}" style="text-decoration:none;">
+                <div class="col-md-6"><a href="{% url 'leave_list' %}" style="text-decoration:none;">
                     <div class="card stat-card shadow-lg animate__animated animate__bounceIn" 
                          style="animation-delay: 0.4s; border-radius: 15px; background: linear-gradient(135deg, #e67e22, #d35400);">
                         <div class="card-body text-white p-4">
@@ -69,7 +69,7 @@
                             <small>Awaiting Approval</small>
                         </div>
                     </div>
-                 </a>
+                </a>
                 </div>
             
                 <div class="col-md-6">
@@ -93,7 +93,7 @@
                 <div class="card-header" 
                      style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 15px;">
                     <h3 class="mb-0 fw-bold d-flex justify-content-between align-items-center">
-                        Teacher Profiles
+                        Teaching Staff
                         <span class="badge bg-light text-dark rounded-pill">{{ staff_users.count }}</span>
                     </h3>
                 </div>
@@ -101,7 +101,7 @@
                     <ul class="list-group list-group-flush">
                         {% for user in staff_users %}
                             <li class="list-group-item teacher-item d-flex align-items-center" 
-                                onclick="copyUsername('{{ user.username }}')">
+                                onclick="copyUsername('{{ user.email }}')">
                                 <img src="{{ user.profile_picture.url|default:'https://via.placeholder.com/50.png?text=User' }}" 
                                      alt="Profile Picture" 
                                      class="rounded-circle me-3"
@@ -110,7 +110,7 @@
                                     <h6 class="mb-0 fw-bold" style="color: #2c3e50;">
                                         {{ user.first_name|capfirst }} {{ user.last_name|capfirst }}
                                     </h6>
-                                    <small class="text-muted">@{{ user.username }}</small>
+                                    <small class="text-muted">{{ user.teacher.designation|upper }}</small>
                                 </div>
                             </li>
                         {% empty %}
@@ -125,7 +125,6 @@
 
 <!-- Custom Styles -->
 <style>
-    
     .action-btn {
         transition: all 0.4s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -146,7 +145,6 @@
         box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         cursor: pointer;
     }
-    
     .stat-card {
         transition: all 0.4s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
@@ -155,12 +153,9 @@
         transform: translateY(-8px) scale(1.03);
         box-shadow: 0 12px 30px rgba(0,0,0,0.15);
     }
-    
     .teacher-card {
         height: 100%;
     }
-    
-    /* Scrollbar Styling */
     .card-body::-webkit-scrollbar {
         width: 8px;
     }
@@ -206,11 +201,11 @@
 
                 if (count < target) {
                     count = Math.min(count + increment, target);
-                    counter.innerText = Math.ceil(count) + suffix;
-                    setTimeout(updateCount, 10);
+                    counter.innerText = Math.round(count)+ suffix;
                 } else {
                     counter.innerText = target + suffix;
                 }
+                setTimeout(updateCount, 10);
             };
             updateCount();
         });

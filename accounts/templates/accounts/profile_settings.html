@@ -15,7 +15,7 @@
                   src="{{ user.profile_picture.url|default:'https://via.placeholder.com/150.png?text=User' }}" 
                   alt="Profile Picture" 
                   class="rounded-circle border border-3 border-white shadow-sm profile-img-clickable" 
-                  style="width: 140px; height: 140px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease;"
+                  style="width: 140px; height: 140px; object-fit: cover; transition: transform 0.3s ease, box-shadow 0.3s ease;"
                   data-bs-toggle="modal" 
                   data-bs-target="#profileModal">
               <h5 class="mt-3 mb-1 fw-bold" style="color: #ffffff;">{{ user.first_name }} {{ user.last_name }}</h5>
@@ -334,8 +334,14 @@
     const tabContents = document.querySelectorAll('.tab-content');
     const uploadButton = document.querySelector('.upload-btn');
 
+    // Prevent default click behavior on profile picture to avoid modal interference
+    profilePreview.addEventListener('click', (e) => {
+      e.preventDefault();
+    });
+
     // Trigger file input click when upload button is clicked
-    uploadButton.addEventListener('click', () => {
+    uploadButton.addEventListener('click', (e) => {
+      e.preventDefault();
       profileInput.click();
     });
 
@@ -345,9 +351,8 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function (e) {
-          const newSrc = e.target.result;
-          profilePreview.src = newSrc;
-          modalProfileImage.src = newSrc;
+          profilePreview.src = e.target.result;
+          modalProfileImage.src = e.target.result;
         };
         reader.readAsDataURL(file);
       }

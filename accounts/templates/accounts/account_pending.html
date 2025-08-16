@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Account Pending{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <div class="card shadow-sm p-4" style="max-width: 600px; margin: auto;">
+    <h3 class="mb-3 text-danger">Your Account Is Not Active Yet</h3>
+    <p class="text-muted">Thank you for registering with AttendXMark.</p>
+    <p>
+      Your account is currently pending approval by an administrator.
+      You'll receive an email notification once your request is reviewed and approved.
+    </p>
+    <hr>
+    <a href="{% url 'logout' %}" class="btn btn-primary mt-3">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+</div>
+{% endblock %}

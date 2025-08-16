@@ -1,0 +1,86 @@
+ 
+ -------------- celery@MuhammadUmer v5.5.2 (immunity)
+--- ***** ----- 
+-- ******* ---- Windows-10-10.0.19045-SP0 2025-06-12 17:11:53
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         axm_project:0x132e1317890
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 4 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . attendance.tasks.send_daily_attendance_emails
+  . attendance.tasks.update_attendance_on_leave_approval
+
+[2025-06-12 17:11:55,871: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-06-12 17:11:57,904: INFO/MainProcess] mingle: searching for neighbors
+[2025-06-12 17:12:04,986: INFO/MainProcess] mingle: all alone
+[2025-06-12 17:12:15,188: INFO/MainProcess] celery@MuhammadUmer ready.
+[2025-06-12 17:14:51,333: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[f6b839ac-47a4-42e5-a6b6-8a34d38de827] received
+[2025-06-12 17:14:51,344: INFO/MainProcess] Processing leave ID 3
+[2025-06-12 17:14:51,378: INFO/MainProcess] Leave found: chabdullah2775@gmail.com, status: Approved
+[2025-06-12 17:14:51,393: WARNING/MainProcess] No attendance record found for lecture IT-408 on 2025-06-12
+[2025-06-12 17:14:53,413: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[f6b839ac-47a4-42e5-a6b6-8a34d38de827] succeeded in 2.0780000000013388s: None
+ 
+ -------------- celery@MuhammadUmer v5.5.2 (immunity)
+--- ***** ----- 
+-- ******* ---- Windows-10-10.0.19045-SP0 2025-07-13 14:29:38
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         axm_project:0x1f3e4fffda0
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 4 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . attendance.tasks.send_daily_attendance_emails
+  . attendance.tasks.update_attendance_on_leave_approval
+  . defender.tasks.add_login_attempt_task
+
+[2025-07-13 14:29:40,692: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-07-13 14:29:42,746: INFO/MainProcess] mingle: searching for neighbors
+[2025-07-13 14:29:49,871: INFO/MainProcess] mingle: all alone
+[2025-07-13 14:30:00,072: INFO/MainProcess] celery@MuhammadUmer ready.
+[2025-07-13 14:30:00,072: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[ec2c4120-54a6-4332-aa85-8c9b10210587] received
+[2025-07-13 14:30:00,072: INFO/MainProcess] Processing leave ID 3
+[2025-07-13 14:30:00,092: INFO/MainProcess] Leave found: chabdullah2775@gmail.com, status: Approved
+[2025-07-13 14:30:00,121: INFO/MainProcess] Updated attendance for 190 to 'leave' for 2025-06-23
+[2025-07-13 14:30:02,142: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[ec2c4120-54a6-4332-aa85-8c9b10210587] succeeded in 2.063000000000102s: None
+[2025-07-13 14:30:02,152: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[341eb3bf-8e70-468c-9737-42d53c321ae8] received
+[2025-07-13 14:30:02,152: INFO/MainProcess] Processing leave ID 3
+[2025-07-13 14:30:02,161: INFO/MainProcess] Leave found: chabdullah2775@gmail.com, status: Approved
+[2025-07-13 14:30:02,171: INFO/MainProcess] No update needed: Attendance for 190 is leave
+[2025-07-13 14:30:02,182: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[341eb3bf-8e70-468c-9737-42d53c321ae8] succeeded in 0.0319999999992433s: None
+[2025-07-13 14:30:02,182: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[37183217-b80d-40f9-af3f-3787bdfbacbc] received
+[2025-07-13 14:30:02,203: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[37183217-b80d-40f9-af3f-3787bdfbacbc] succeeded in 0.014999999999417923s: None
+[2025-07-13 14:30:02,211: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[37f60fc3-2b5f-4c76-b589-fe39aec364a1] received
+[2025-07-13 14:30:02,232: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[37f60fc3-2b5f-4c76-b589-fe39aec364a1] succeeded in 0.014999999999417923s: None
+[2025-07-13 14:30:02,242: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[c9b626fa-a069-4d8c-801a-1dcabd4775ce] received
+[2025-07-13 14:30:02,262: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[c9b626fa-a069-4d8c-801a-1dcabd4775ce] succeeded in 0.01599999999962165s: None
+[2025-07-13 14:30:02,262: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[256203f2-1938-4a86-83cb-0912cb961837] received
+[2025-07-13 14:30:02,272: INFO/MainProcess] Processing leave ID 3
+[2025-07-13 14:30:02,276: INFO/MainProcess] Leave found: chabdullah2775@gmail.com, status: Approved
+[2025-07-13 14:30:02,281: INFO/MainProcess] No update needed: Attendance for 190 is leave
+[2025-07-13 14:30:02,281: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[256203f2-1938-4a86-83cb-0912cb961837] succeeded in 0.0s: None
+[2025-07-13 14:30:02,291: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[9c5cd6ed-362c-4713-b1c8-d9515f13af39] received
+[2025-07-13 14:30:02,291: INFO/MainProcess] Processing leave ID 3
+[2025-07-13 14:30:02,291: INFO/MainProcess] Leave found: chabdullah2775@gmail.com, status: Approved
+[2025-07-13 14:30:02,303: INFO/MainProcess] No update needed: Attendance for 190 is leave
+[2025-07-13 14:30:02,303: INFO/MainProcess] Task attendance.tasks.update_attendance_on_leave_approval[9c5cd6ed-362c-4713-b1c8-d9515f13af39] succeeded in 0.01599999999962165s: None
+[2025-07-13 14:30:02,303: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[25d262b1-e307-45f5-ba0d-797cc2989ad0] received
+[2025-07-13 14:30:02,311: INFO/MainProcess] Task defender.tasks.add_login_attempt_task[25d262b1-e307-45f5-ba0d-797cc2989ad0] succeeded in 0.0s: None
+[2025-07-13 14:30:02,311: INFO/MainProcess] Task attendance.tasks.send_daily_attendance_emails[3edec8b9-dc55-49ee-a699-68dde3bd3fb3] received
+[2025-07-13 14:30:02,311: INFO/MainProcess] Starting daily attendance email task
+[2025-07-13 14:30:02,321: INFO/MainProcess] Completed daily attendance email task
+[2025-07-13 14:30:02,321: INFO/MainProcess] Task attendance.tasks.send_daily_attendance_emails[3edec8b9-dc55-49ee-a699-68dde3bd3fb3] succeeded in 0.014999999999417923s: None

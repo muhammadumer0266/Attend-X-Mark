@@ -1,41 +1,283 @@
 {% extends 'base.html' %}
+{% load custom_filters attendance_filters %}
 {% block title %}Attendance Details{% endblock %}
 {% block content %}
-<div class="container mt-5">
-  <h2 class="text-center mb-5 text-2xl font-bold text-gray-800 bg-gradient-to-r from-blue-100 to-white p-3 rounded-lg shadow-md">{{ course.code }} - {{ semester.name }} Attendance</h2>
-  <div class="bg-white p-4 rounded-lg shadow-lg">
-    <table class="table w-full text-center">
-      <thead class="bg-gray-100">
+
+<div class="attd-container">
+  <header class="attd-header">
+    <h1 class="attd-title">{{ course.code }} - {{ semester.name }} Attendance</h1>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="attd-summary">
+    <div class="attd-card">
+      <span class="attd-label">Total Present</span>
+      <span class="attd-value">{{ attendance_records|filter_by_status:'present'|length }}</span>
+    </div>
+    <div class="attd-card">
+      <span class="attd-label">Total Absent</span>
+      <span class="attd-value">{{ attendance_records|filter_by_status:'absent'|length }}</span>
+    </div>
+    <div class="attd-card">
+      <span class="attd-label">Total Leaves</span>
+      <span class="attd-value">{{ attendance_records|filter_by_status:'leave'|length }}</span>
+    </div>
+  </div>
+
+  <!-- Attendance Table -->
+  <div class="attd-table-container">
+    <table class="attd-table">
+      <thead>
         <tr>
-          <th class="p-2 text-gray-700 font-semibold">Date</th>
-          <th class="p-2 text-gray-700 font-semibold">Status</th>
-          <th class="p-2 text-gray-700 font-semibold">Type</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Type</th>
         </tr>
       </thead>
       <tbody>
         {% for record in attendance_records %}
-        <tr class="hover:bg-gray-50 transition duration-200">
-          <td class="p-2">{{ record.attendance_record.date|date:'d/m/Y' }}</td>
-          <td class="p-2">{{ record.attendance_status |capfirst }}</td>
-          <td class="p-2">{% if record.attendance_record.is_makeup_class %}Makeup{% else %}Regular{% endif %}</td>
+        <tr>
+          <td>{{ record.attendance_record.date|date:"d/m/Y" }}</td>
+          <td>
+            <span class="attd-pill attd-status-{{ record.attendance_status|lower }}">
+              {{ record.attendance_status|title }}
+            </span>
+          </td>
+          <td>
+            <span class="attd-pill attd-type-{{ record.attendance_record.is_makeup_class|yesno:'makeup,regular' }}">
+              {{ record.attendance_record.is_makeup_class|yesno:'Makeup,Regular' }}
+            </span>
+          </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="3" class="p-2 text-gray-500">No attendance records found.</td>
+          <td colspan="3" class="attd-no-records">No attendance records available.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <div class="text-center mt-4">
-    <a href="{% url 'student_attendance' %}" class="btn bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition duration-300">Back</a>
+
+  <!-- Attendance Percentage -->
+  <div class="attd-percentage">
+    {% with total=attendance_records|length present=attendance_records|filter_by_status:'present'|length %}
+      {% if total > 0 %}
+        {% with percent=present|floatformat:2|divide:total|multiply:100 %}
+          <p class="attd-percent-text">Attendance Percentage: <span class="attd-percent-value">{{ percent|floatformat:2 }}%</span></p>
+        {% endwith %}
+      {% else %}
+        <p class="attd-percent-text">Attendance Percentage: <span class="attd-percent-value">0.00%</span></p>
+      {% endif %}
+    {% endwith %}
   </div>
+
+  <a href="{% url 'student_attendance' %}" class="attd-back-btn">← Back to Attendance</a>
 </div>
+
+<!-- Styles -->
 <style>
-  @media (max-width: 640px) {
-    table { font-size: 0.9rem; }
-    th, td { padding: 0.5rem; }
-    .btn { width: 100%; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --attd-primary: #457b9d;
+    --attd-secondary: #1d3557;
+    --attd-light-bg: #f8fafc;
+    --attd-card-bg: #ffffff;
+    --attd-text: #2d3748;
+    --attd-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  }
+
+  .attd-container {
+    font-family: 'Inter', sans-serif;
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .attd-header {
+    background: var(--attd-primary);
+    color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .attd-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .attd-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+  }
+
+  .attd-card {
+    background: var(--attd-card-bg);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    text-align: center;
+    padding: 15px;
+    box-shadow: var(--attd-shadow);
+  }
+
+  .attd-label {
+    font-size: 13px;
+    color: #718096;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .attd-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--attd-secondary);
+  }
+
+  .attd-table-container {
+    overflow-x: auto;
+    margin: 20px 0;
+    background: var(--attd-card-bg);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: var(--attd-shadow);
+  }
+
+  .attd-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .attd-table th, .attd-table td {
+    padding: 12px 14px;
+    font-size: 14px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .attd-table th {
+    background: var(--attd-secondary);
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .attd-table tr:hover td {
+    background: #f1f5f9;
+  }
+
+  .attd-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 30px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  .attd-status-present {
+    background-color: #e6f4ea;
+    color: #2f855a;
+    border-color: #38a169;
+  }
+
+  .attd-status-absent {
+    background-color: #fde8e8;
+    color: #c53030;
+    border-color: #e53e3e;
+  }
+
+  .attd-status-leave {
+    background-color: #fff5e6;
+    color: #dd6b20;
+    border-color: #ed8936;
+  }
+
+  .attd-type-regular {
+    background-color: #edf2f7;
+    color: #2d3748;
+    border-color: #cbd5e0;
+  }
+
+  .attd-type-makeup {
+    background-color: #f3e8ff;
+    color: #6b46c1;
+    border-color: #9f7aea;
+  }
+
+  .attd-no-records {
+    text-align: center;
+    color: #a0aec0;
+    padding: 15px;
+    font-size: 14px;
+  }
+
+  .attd-percentage {
+    text-align: center;
+    margin-top: 20px;
+    background: var(--attd-card-bg);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: var(--attd-shadow);
+  }
+
+  .attd-percent-text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--attd-text);
+  }
+
+  .attd-percent-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--attd-secondary);
+    margin-left: 6px;
+  }
+
+  .attd-back-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 16px;
+    background: var(--attd-secondary);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    border-radius: 6px;
+    box-shadow: var(--attd-shadow);
+    transition: background 0.2s ease;
+  }
+
+  .attd-back-btn:hover {
+    background: #14233c;
+  }
+
+  @media (max-width: 600px) {
+    .attd-title {
+      font-size: 20px;
+    }
+
+    .attd-table th, .attd-table td {
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    .attd-percent-text {
+      font-size: 15px;
+    }
+
+    .attd-percent-value {
+      font-size: 17px;
+    }
   }
 </style>
+
 {% endblock %}

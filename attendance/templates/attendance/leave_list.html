@@ -2,22 +2,33 @@
 
 {% block content %}
 <div class="leave-container mt-5">
+    
     <div class="leave-card">
         <div class="leave-header">
             <h3>Leave Requests</h3>
         </div>
         <div class="leave-body">
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
             <div class="table-responsive">
                 <table class="table table-hover table-bordered shadow-sm">
                     <thead>
                         <tr>
+                            {% if user.is_teacher %}
                             <th>Student</th>
+                            {% endif %}
                             <th>Subject</th>
                             <th>Body</th>
                             <th>Lecture</th>
                             <th>Date</th>
                             <th>Status</th>
-                            {% if user.is_staff %}
+                            {% if user.is_teacher %}
                             <th>Actions</th>
                             {% endif %}
                         </tr>
@@ -25,7 +36,9 @@
                     <tbody>
                         {% for leave in leaves %}
                         <tr data-bs-toggle="modal" data-bs-target="#leaveModal{{ leave.id }}" style="cursor: pointer;">
+                            {% if user.is_teacher %}
                             <td>{{ leave.user.first_name}} {{ leave.user.last_name}}</td>
+                            {% endif %}
                             <td class="subject-cell">
                                 {{ leave.subject|truncatechars:20 }}
                             </td>
@@ -43,7 +56,7 @@
                                     {{ leave.status }}
                                 </span>
                             </td>
-                            {% if user.is_staff %}
+                            {% if user.is_teacher %}
                             <td>
                                 {% if leave.status == 'Pending' %}
                                 <a href="{% url 'leave_approve' leave.id %}" class="btn btn-success btn-sm me-1" style="z-index:20;">Approve</a>

@@ -72,33 +72,24 @@ class ResetPasswordForm(forms.Form):
     confirm_password = forms.CharField(widget=forms.PasswordInput)
     captcha = ReCaptchaField()
 
-class UnblockDeviceForm(forms.Form):
-    email = forms.EmailField()
-    captcha = ReCaptchaField()
-
-class VerifyUnblockOTPForm(forms.Form):
-    otp = forms.CharField(max_length=6)
-    captcha = ReCaptchaField()
-
 from django.contrib.auth.forms import AuthenticationForm
 class CustomAuthenticationForm(AuthenticationForm):
     captcha = ReCaptchaField()
 
-# Update your existing TeacherAdditionalInfoForm and StudentAdditionalInfoForm
-
-# Form for Teacher additional information
 class TeacherAdditionalInfoForm(forms.ModelForm):
     contact_number = PhoneNumberField(
         widget=forms.NumberInput(attrs={'class': 'personal-info-input-text'}),
         label='Contact Number',
-        region='PK'
+        region='PK',
+        required=True
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'})
+        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'}),
+        required=True
     )
     profile_picture = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
-        required=False
+        required=True
     )
     otp = forms.CharField(
         max_length=6,
@@ -107,7 +98,7 @@ class TeacherAdditionalInfoForm(forms.ModelForm):
             'placeholder': 'Enter OTP',
             'disabled': True
         }),
-        required=False,
+        required=True,
         label='OTP'
     )
 
@@ -128,27 +119,31 @@ class TeacherAdditionalInfoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['department'].queryset = Department.objects.all()
+        # mark all fields required
+        for field in self.fields.values():
+            field.required = True
 
-    # Validation for email uniqueness
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email and CustomUser.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
             raise forms.ValidationError('This email is already registered.')
         return email
 
-# Form for Student additional information
+
 class StudentAdditionalInfoForm(forms.ModelForm):
     contact_number = PhoneNumberField(
         widget=forms.NumberInput(attrs={'class': 'personal-info-input-text'}),
         label='Contact Number',
-        region='PK'
+        region='PK',
+        required=True
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'})
+        widget=forms.EmailInput(attrs={'class': 'personal-info-input-email', 'placeholder': 'Enter your email'}),
+        required=True
     )
     profile_picture = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'personal-info-input-file'}),
-        required=False
+        required=True
     )
     otp = forms.CharField(
         max_length=6,
@@ -157,13 +152,13 @@ class StudentAdditionalInfoForm(forms.ModelForm):
             'placeholder': 'Enter OTP',
             'disabled': True
         }),
-        required=False,
+        required=True,
         label='OTP'
     )
 
     class Meta:
         model = Student
-        fields = ['profile_picture', 'email', 'contact_number', 'roll_no', 'degree_level', 'discipline', 'semester', 'shift', 'section', 'otp']
+        fields = ['profile_picture', 'email', 'contact_number', 'roll_no', 'degree_level', 'discipline', 'semester', 'shift', 'section', 'department', 'otp']
         widgets = {
             'roll_no': forms.TextInput(
                 attrs={'class': 'personal-info-input-text', 'placeholder': 'Enter roll number'}
@@ -173,21 +168,8 @@ class StudentAdditionalInfoForm(forms.ModelForm):
             'discipline': forms.Select(attrs={'class': 'personal-info-select'}),
             'semester': forms.Select(attrs={'class': 'personal-info-select'}),
             'shift': forms.Select(attrs={'class': 'personal-info-select'}),
+            'department': forms.Select(attrs={'class': 'personal-info-select'}),
         }
-
-    # Validation for roll number
-    def clean_roll_no(self):
-        roll_no = self.cleaned_data.get('roll_no')
-        if roll_no and Student.objects.exclude(pk=self.instance.pk).filter(roll_no=roll_no).exists():
-            raise forms.ValidationError('This Roll No. is already in use.')
-        return roll_no
-
-    # Validation for email uniqueness
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if email and CustomUser.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
-            raise forms.ValidationError('This email is already registered.')
-        return email
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -195,3 +177,20 @@ class StudentAdditionalInfoForm(forms.ModelForm):
         self.fields['discipline'].queryset = Discipline.objects.all()
         self.fields['semester'].queryset = Semester.objects.all()
         self.fields['shift'].queryset = Shift.objects.all()
+        self.fields['department'].queryset = Department.objects.all()
+        # mark all fields required
+        for field in self.fields.values():
+            field.required = True
+
+    def clean_roll_no(self):
+        roll_no = self.cleaned_data.get('roll_no')
+        if roll_no and Student.objects.exclude(pk=self.instance.pk).filter(roll_no=roll_no).exists():
+            raise forms.ValidationError('This Roll No. is already in use.')
+        return roll_no
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and CustomUser.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
+            raise forms.ValidationError('This email is already registered.')
+        return email
+ 

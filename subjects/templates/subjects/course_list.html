@@ -10,6 +10,13 @@
       <h3>Lectures for {{ semester.name|default:'Current Semester' }}</h3>
     </div>
 
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="margin:20px;" class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
     <!-- Lectures Table -->
     <div class="courses-body">
       <div class="table-responsive">

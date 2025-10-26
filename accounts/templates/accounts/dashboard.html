@@ -12,15 +12,15 @@
                     <h2 class="card-title text-dark mb-4" style="color: #34495e;">Quick Actions</h2>
                     <div class="d-flex flex-wrap gap-3">
                         {% if request.user.is_teacher %}
-                        <a href="#" 
-                           class="btn action-btn text-white fw-bold" 
-                           style="background: #27ae60; border-radius: 10px; padding: 12px 25px;">
-                            <i class="fas fa-camera me-2"></i>Capture Face
-                        </a>
                         <a href="{% url 'lecture_list' %}" 
                            class="btn action-btn text-white fw-bold" 
                            style="background:  #2980b9; border-radius: 10px; padding: 12px 25px;">
                             <i class="fas fa-list me-2"></i>View Lectures
+                        </a>
+                        <a href="{% url 'teacher_lectures_report' %}" 
+                           class="btn action-btn text-white fw-bold" 
+                           style="background: #27ae60; border-radius: 10px; padding: 12px 25px;">
+                             <i class="fas fa-user-check me-2"></i>View Reports
                         </a>
                         {% elif request.user.is_student %}
                         <a href="{% url 'student_attendance' %}"  class="btn action-btn text-white fw-bold" 

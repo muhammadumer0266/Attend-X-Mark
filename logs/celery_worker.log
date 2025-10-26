@@ -84,3 +84,53 @@
 [2025-07-13 14:30:02,311: INFO/MainProcess] Starting daily attendance email task
 [2025-07-13 14:30:02,321: INFO/MainProcess] Completed daily attendance email task
 [2025-07-13 14:30:02,321: INFO/MainProcess] Task attendance.tasks.send_daily_attendance_emails[3edec8b9-dc55-49ee-a699-68dde3bd3fb3] succeeded in 0.014999999999417923s: None
+ 
+ -------------- celery@MuhammadUmer v5.5.2 (immunity)
+--- ***** ----- 
+-- ******* ---- Windows-10-10.0.19045-SP0 2025-10-26 20:27:07
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         axm_project:0x209ce9ffbf0
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 4 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . attendance.tasks.send_daily_attendance_emails
+  . attendance.tasks.update_attendance_on_leave_approval
+
+[2025-10-26 20:27:09,928: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-10-26 20:27:14,006: INFO/MainProcess] mingle: searching for neighbors
+[2025-10-26 20:27:21,144: INFO/MainProcess] mingle: all alone
+[2025-10-26 20:27:29,313: INFO/MainProcess] celery@MuhammadUmer ready.
+[2025-10-26 20:27:29,313: INFO/MainProcess] Task celery.backend_cleanup[8b40c9e5-7b47-46ac-b2c4-88922b1660e4] received
+[2025-10-26 20:27:31,368: INFO/MainProcess] Task celery.backend_cleanup[8b40c9e5-7b47-46ac-b2c4-88922b1660e4] succeeded in 2.063000000009197s: None
+ 
+ -------------- celery@MuhammadUmer v5.5.2 (immunity)
+--- ***** ----- 
+-- ******* ---- Windows-10-10.0.19045-SP0 2025-10-26 20:55:49
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         axm_project:0x2004f937ad0
+- ** ---------- .> transport:   redis://localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 4 (solo)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . attendance.tasks.send_daily_attendance_emails
+  . attendance.tasks.update_attendance_on_leave_approval
+
+[2025-10-26 20:55:51,884: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-10-26 20:55:53,935: INFO/MainProcess] mingle: searching for neighbors
+[2025-10-26 20:56:01,126: INFO/MainProcess] mingle: all alone
+[2025-10-26 20:56:11,318: INFO/MainProcess] celery@MuhammadUmer ready.

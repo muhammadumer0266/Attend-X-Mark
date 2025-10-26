@@ -9,16 +9,17 @@ import random
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ['email', 'first_name', 'last_name', 'profile_picture_display', 'is_student', 'is_teacher']
+    list_display = ['email', 'first_name', 'last_name', 'profile_picture_display', 'is_active']
     search_fields = ['email', 'username']
     ordering = ['email']
     readonly_fields = ['profile_picture_display']
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('profile_picture', 'profile_picture_display', 'first_name', 'last_name')}),
+        ('Personal Info', {'fields': ('profile_picture', 'profile_picture_display', 'first_name', 'last_name','contact_number')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_student', 'is_teacher')}),
         ('Important dates', {'fields': ('last_login',)}),
     )
+    list_filter = ('is_superuser', 'is_active', 'is_teacher','is_student')
     add_fieldsets = (
         (None, {'classes': ('wide',), 'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'is_student', 'is_teacher')}),
     )

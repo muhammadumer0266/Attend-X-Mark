@@ -55,10 +55,25 @@
         const messageDiv = document.getElementById('message');
         const nextUrl = "{{ next }}";
 
-        // Access webcam
-        navigator.mediaDevices.getUserMedia({ video: true })
+        // Ensure compatibility with older browsers
+        navigator.getUserMedia = navigator.getUserMedia ||
+                                 navigator.webkitGetUserMedia ||
+                                 navigator.mozGetUserMedia ||
+                                 navigator.msGetUserMedia;
+
+        // Access webcam with constraints for mobile compatibility
+        const constraints = {
+            video: {
+                facingMode: 'user', // Prefer front camera on mobile
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints)
             .then(stream => {
                 video.srcObject = stream;
+                video.onloadedmetadata = () => video.play();
             })
             .catch(err => {
                 messageDiv.innerText = 'Error accessing webcam: ' + err;
